@@ -41,10 +41,16 @@
     </table>
 
     <!-- Chart.js container -->
-    <canvas id="distanceChart" height="100"></canvas>
+    <canvas id="distanceChart" height="50"></canvas>
 
     <!-- Chart.js container -->
-    <canvas id="nbVolsChart" height="100"></canvas>
+    <canvas id="nbVolsChart" height="50"></canvas>
+
+    <!-- Chart.js container -->
+    <canvas id="nbVolsSolo" height="100"></canvas>
+
+    <!-- Chart.js container -->
+    <canvas id="nbVolsSites" height="100"></canvas>
 
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -53,6 +59,7 @@
 
     <script>
         const volsParAn = {}; // Regrouper les données par année
+        const volsParSite = {};
 
         fetch('book.json')
             .then(response => response.json())
@@ -85,11 +92,33 @@
                     if (!volsParAn[annee]) {
                         volsParAn[annee] = {
                             nb: 0,
-                            totalMinutes: 0
+                            totalMinutes: 0,
+                            solo: 0
                         };
                     }
+                    // Vol par site
+                    let sites = vol.site.split(" ");
+                    let siteShort = "";
+
+                    for(word in sites) {
+                        siteShort += sites[word].toLowerCase();
+                        if(sites[word].length < 4) {
+                            siteShort += " ";
+                        } else {
+                            break;
+                        }
+                    }
+
+                    if (!volsParSite[siteShort]) {
+                        volsParSite[siteShort] = 0;
+                    }
+                    volsParSite[siteShort] += 1;
                     // Compter le vol
                     volsParAn[annee].nb += 1;
+                    // Compter les vols solo
+                    if (vol.monitor === 'None') {
+                        volsParAn[annee].solo += 1;
+                    }
                     // Ajouter durée (en minutes)
                     const [h, m, s] = vol.duration.split(':').map(Number);
                     volsParAn[annee].totalMinutes += h * 60 + m + s / 60;
@@ -174,7 +203,55 @@
                         }
                     }
                 });
-            });
+
+                nbVolsSolo = annees.map(a => volsParAn[a].solo);
+                let total_vols = nbVols.reduce(
+                    (accumulator, currentValue) => accumulator + currentValue,
+                    initialValue = 0,
+                );
+                let total_vols_solo = nbVolsSolo.reduce(
+                    (accumulator, currentValue) => accumulator + currentValue,
+                    initialValue = 0,
+                );
+                let total_vols_ecole = total_vols - total_vols_solo;
+
+                // Nombre de vols solo
+                // Créer le graphique de distance
+                new Chart(document.getElementById('nbVolsSolo'), {
+                    type: 'pie',
+                    data: {
+                        labels: ['Vols école', 'Vols solo'],
+                        datasets: [{
+                            label: 'Nombre de vols',
+                            data: [total_vols_ecole, total_vols_solo],
+                            backgroundColor: ['#4caf50', '#2196f3']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+        // Graphique des vols par site
+        volsParSiteName = Object.entries(volsParSite).map(a => a[0]);
+        volsParSiteValues = Object.entries(volsParSite).map(a => a[1]);
+        new Chart(document.getElementById('nbVolsSites'), {
+                    type: 'pie',
+                    data: {
+                        labels: volsParSiteName,
+                        datasets: [{
+                            label: 'Nombre de vols',
+                            data: volsParSiteValues
+                            // backgroundColor: ['#4caf50', '#2196f3']
+                        }]
+                    }
+                });
+        });
 
     </script>
 
