@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tableau des vols</title>
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        table {
+            width: 100%;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Journal des vols</h2>
+
+    <table id="volsTable" class="display">
+        <thead>
+            <tr>
+                <th>Nbr</th>
+                <th>Date</th>
+                <th>Site</th>
+                <th>Start time</th>
+                <th>Durée</th>
+                <th>Distance (m)</th>
+                <th>elevation gains</th>
+                <th>elevation over start</th>
+                <th>Analyse</th>
+                <th>Monitor</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <!-- Chart.js container -->
+    <canvas id="distanceChart" height="100"></canvas>
+
+    <!-- Chart.js container -->
+    <canvas id="nbVolsChart" height="100"></canvas>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const volsParAn = {}; // Regrouper les données par année
+
+        fetch('book.json')
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('tableBody');
+                const dates = [], distances = [];
+
+                data.forEach(vol => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${vol.nbr}</td>
+                        <td>${vol.date}</td>
+                        <td>${vol.site}</td>
+                        <td>${vol.start_time}</td>
+                        <td>${vol.duration}</td>
+                        <td>${vol.distance_total.toFixed(1)}</td>
+                        <td>${vol.elevation_total.toFixed(1)}</td>
+                        <td>${vol.elevation_over_start.toFixed(1)}</td>
+                        <td>${vol.analyse}</td>
+                        <td>${vol.monitor}</td>
+                    `;
+                    tbody.appendChild(tr);
+
+                    // Pour les graphiques
+                    dates.push(vol.date);
+                    distances.push((vol.distance_total / 1000).toFixed(2)); // en km
+
+                    const annee = new Date(vol.date).getFullYear();
+                    // Initialisation des données par année
+                    if (!volsParAn[annee]) {
+                        volsParAn[annee] = {
+                            nb: 0,
+                            totalMinutes: 0
+                        };
+                    }
+                    // Compter le vol
+                    volsParAn[annee].nb += 1;
+                    // Ajouter durée (en minutes)
+                    const [h, m, s] = vol.duration.split(':').map(Number);
+                    volsParAn[annee].totalMinutes += h * 60 + m + s / 60;
+                });
+
+                // Activer DataTables
+                $('#volsTable').DataTable({
+                    order: [[0, 'dec']],  // 🠔 Tri sur la première colonne, descendant
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
+                    }
+                });
+
+                // Créer le graphique de distance
+                new Chart(document.getElementById('distanceChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: dates.reverse(),
+                        datasets: [{
+                            label: 'Distance totale (km)',
+                            data: distances.reverse(),
+                            backgroundColor: '#3e95cd'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Ordre chronologique
+                const annees = Object.keys(volsParAn).sort();
+
+                // Données pour les graphiques
+                const nbVols = annees.map(a => volsParAn[a].nb);
+                const tpsVols = annees.map(a => volsParAn[a].totalMinutes / 60);
+
+                // Nombre de vols
+                new Chart(document.getElementById('nbVolsChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: annees,
+                        datasets: [{
+                            label: 'Nombre de vols',
+                            data: nbVols,
+                            backgroundColor: '#4caf50',
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Temps de vol (h)',
+                            data: tpsVols,
+                            backgroundColor: '#2196f3',
+                            yAxisID: 'y1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                // beginAtZero: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Nombre de vols'
+                                }
+                            },
+                            y1: {
+                                // beginAtZero: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Temps de vol (h)'
+                                },
+                                grid: {
+                                    drawOnChartArea: false // Ne pas dessiner la grille pour cette échelle
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+
+    </script>
+
+</body>
+
+</html>
