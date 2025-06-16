@@ -42,6 +42,8 @@
 <body>
     <h2>Journal des vols</h2>
 
+    <button id="saveJsonBtn">💾 Télécharger le JSON</button>
+
     <table id="volsTable" class="display">
         <thead>
             <tr>
@@ -285,6 +287,19 @@
                         }
                     }
                 });
+
+                // Ajoute l’événement sur le bouton
+    document.getElementById('saveJsonBtn').addEventListener('click', function () {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'vols-export.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+
         });
 
     </script>
