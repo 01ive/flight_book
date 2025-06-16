@@ -16,6 +16,26 @@
             width: 100%;
             font-size: 14px;
         }
+
+        #graphs {
+            display: flex;
+            height: 33vh;
+            align-items: stretch;
+            justify-content: space-around;
+        }
+        #nbVolsChart{
+            max-width: 50%;
+        }
+        #nbVolsSolo{
+            max-width: 100%;
+        }
+        #nbVolsSites {
+            max-width: 25%;
+        }
+        #distanceChart {
+            margin: 20px auto;
+            height: 33vh;
+        }
     </style>
 </head>
 
@@ -40,17 +60,18 @@
         <tbody id="tableBody"></tbody>
     </table>
 
-    <!-- Chart.js container -->
-    <canvas id="distanceChart" height="50"></canvas>
+    <div id="graphs">
+        <!-- Chart.js container -->
+        <canvas id="nbVolsChart" height="100"></canvas>
 
-    <!-- Chart.js container -->
-    <canvas id="nbVolsChart" height="50"></canvas>
+        <!-- Chart.js container -->
+        <canvas id="nbVolsSolo"></canvas>
 
-    <!-- Chart.js container -->
-    <canvas id="nbVolsSolo" height="100"></canvas>
-
-    <!-- Chart.js container -->
-    <canvas id="nbVolsSites" height="100"></canvas>
+        <!-- Chart.js container -->
+        <canvas id="nbVolsSites"></canvas>
+    </div>
+     <!-- Chart.js container -->
+    <canvas id="distanceChart" height="100"></canvas>
 
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -228,27 +249,40 @@
                         }]
                     },
                     options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true
+                        plugins: {
+                            legend: {
+                                display: false,
+                            },
+                            title: {
+                                display: true,
+                                text: 'Vols solo / école'
                             }
                         }
                     }
                 });
 
         // Graphique des vols par site
-        volsParSiteName = Object.entries(volsParSite).map(a => a[0]);
-        volsParSiteValues = Object.entries(volsParSite).map(a => a[1]);
+        let volsParSiteName = Object.entries(volsParSite).map(a => a[0]);
+        let volsParSiteValues = Object.entries(volsParSite).map(a => a[1]);
         new Chart(document.getElementById('nbVolsSites'), {
                     type: 'pie',
                     data: {
                         labels: volsParSiteName,
                         datasets: [{
-                            label: 'Nombre de vols',
+                            label: 'Sites de vols',
                             data: volsParSiteValues
-                            // backgroundColor: ['#4caf50', '#2196f3']
                         }]
+                    },
+                    options: {
+                        plugins: {
+                            legend: {
+                                display: false,
+                            },
+                            title: {
+                                display: true,
+                                text: 'Sites'
+                            }
+                        }
                     }
                 });
         });
