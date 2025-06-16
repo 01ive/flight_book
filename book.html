@@ -23,15 +23,19 @@
             align-items: stretch;
             justify-content: space-around;
         }
-        #nbVolsChart{
+
+        #nbVolsChart {
             max-width: 50%;
         }
-        #nbVolsSolo{
+
+        #nbVolsSolo {
             max-width: 100%;
         }
+
         #nbVolsSites {
             max-width: 25%;
         }
+
         #distanceChart {
             margin: 20px auto;
             height: 33vh;
@@ -43,6 +47,11 @@
     <h2>Journal des vols</h2>
 
     <button id="saveJsonBtn">💾 Télécharger le JSON</button>
+
+    <div id="menu_button">
+        <label id="my-file-selector" for="file-selector"></label>
+        <input type="file" id="file-selector" accept=".igc, .gpx">
+    </div>
 
     <table id="volsTable" class="display">
         <thead>
@@ -72,23 +81,28 @@
         <!-- Chart.js container -->
         <canvas id="nbVolsSites"></canvas>
     </div>
-     <!-- Chart.js container -->
+    <!-- Chart.js container -->
     <canvas id="distanceChart" height="100"></canvas>
 
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="bundle.js"></script>
 
     <script>
         const volsParAn = {}; // Regrouper les données par année
         const volsParSite = {};
+
+        var book_data = null;
 
         fetch('book.json')
             .then(response => response.json())
             .then(data => {
                 const tbody = document.getElementById('tableBody');
                 const dates = [], distances = [];
+
+                book_data = data;
 
                 data.forEach(vol => {
                     const tr = document.createElement('tr');
@@ -123,9 +137,9 @@
                     let sites = vol.site.split(" ");
                     let siteShort = "";
 
-                    for(word in sites) {
+                    for (word in sites) {
                         siteShort += sites[word].toLowerCase();
-                        if(sites[word].length < 4) {
+                        if (sites[word].length < 4) {
                             siteShort += " ";
                         } else {
                             break;
@@ -263,10 +277,10 @@
                     }
                 });
 
-        // Graphique des vols par site
-        let volsParSiteName = Object.entries(volsParSite).map(a => a[0]);
-        let volsParSiteValues = Object.entries(volsParSite).map(a => a[1]);
-        new Chart(document.getElementById('nbVolsSites'), {
+                // Graphique des vols par site
+                let volsParSiteName = Object.entries(volsParSite).map(a => a[0]);
+                let volsParSiteValues = Object.entries(volsParSite).map(a => a[1]);
+                new Chart(document.getElementById('nbVolsSites'), {
                     type: 'pie',
                     data: {
                         labels: volsParSiteName,
@@ -287,20 +301,59 @@
                         }
                     }
                 });
+            });
 
-                // Ajoute l’événement sur le bouton
-    document.getElementById('saveJsonBtn').addEventListener('click', function () {
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'vols-export.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-
-
+        // Ajoute l’événement sur le bouton
+        document.getElementById('saveJsonBtn').addEventListener('click', function () {
+            const blob = new Blob([JSON.stringify(book_data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'vols-export.json';
+            a.click();
+            URL.revokeObjectURL(url);
         });
+
+        // Create file reader object
+        var file_name = null;
+        const file_reader = new FileReader();
+        file_reader.addEventListener('load', (event) => {
+            let flight = new Flight("flight");
+            flight.load_file(event.target.result, file_name);
+            active_flight = flight;
+            active_flight.process_flight_info();
+
+            var new_flight_data = {};
+            new_flight_data = active_flight.flight_info;
+            new_flight_data.file_name = active_flight.file_name;
+            new_flight_data.nbr = book_data[0]['nbr']+1;
+
+            new_flight_data.site = "None";
+            new_flight_data.monitor = "None";
+            let comments = active_flight.comment.split('\n');
+
+            for(line in comments) {
+                if (comments[line].search("site:") >= 0) {
+                    new_flight_data.site = comments[line].replace("site:", "").trim();
+                }
+                if (comments[line].search("monitor:") >= 0) {
+                    new_flight_data.monitor = comments[line].replace("monitor:", "").trim();
+                }
+            }
+            comments = comments.join('\n');
+            new_flight_data.analyse = comments.replace(/site:.*\n/, '').replace(/monitor:.*\n/, '').trim();
+
+            book_data.unshift(new_flight_data);            
+        });
+
+        // Load file button
+        const fileSelector = document.getElementById('file-selector');
+        fileSelector.addEventListener('change', (event) => {
+            const fileList = event.target.files;
+            file_name = fileList[0].name;	// Get only the file name
+            file_reader.readAsText(fileList[0]);
+        });
+
 
     </script>
 
