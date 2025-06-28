@@ -97,6 +97,7 @@
         var book_data = null;
 
         fetch('book.json')
+        // fetch('https://drive.google.com/uc?export=download&id=1W1dxk2-_e2nrIFApyKcDRbvXftNV_RiY')
             .then(response => response.json())
             .then(data => {
                 const tbody = document.getElementById('tableBody');
@@ -353,7 +354,6 @@
             file_name = fileList[0].name;	// Get only the file name
             file_reader.readAsText(fileList[0]);
         });
-
 
     </script>
 
