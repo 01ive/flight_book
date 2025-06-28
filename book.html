@@ -96,213 +96,222 @@
 
         var book_data = null;
 
+        function updateTable(data) {
+            const tbody = document.getElementById('tableBody');
+            const dates = [], distances = [];
+
+            // Reinit table data
+            tbody.innerHTML = '';
+            $('#volsTable').DataTable().clear().destroy();
+            // Reinit charts
+            const allCharts = Chart.instances ? Object.values(Chart.instances) : [];
+            allCharts.forEach(chart => chart.destroy());
+
+            book_data = data;
+
+            data.forEach(vol => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${vol.nbr}</td>
+                    <td>${vol.date}</td>
+                    <td>${vol.site}</td>
+                    <td>${vol.start_time}</td>
+                    <td>${vol.duration}</td>
+                    <td>${vol.distance_total.toFixed(1)}</td>
+                    <td>${vol.elevation_total.toFixed(1)}</td>
+                    <td>${vol.elevation_over_start.toFixed(1)}</td>
+                    <td>${vol.analyse}</td>
+                    <td>${vol.monitor}</td>
+                `;
+                tbody.appendChild(tr);
+
+                // Pour les graphiques
+                dates.push(vol.date);
+                distances.push((vol.distance_total / 1000).toFixed(2)); // en km
+
+                const annee = new Date(vol.date).getFullYear();
+                // Initialisation des données par année
+                if (!volsParAn[annee]) {
+                    volsParAn[annee] = {
+                        nb: 0,
+                        totalMinutes: 0,
+                        solo: 0
+                    };
+                }
+                // Vol par site
+                let sites = vol.site.split(" ");
+                let siteShort = "";
+
+                for (word in sites) {
+                    siteShort += sites[word].toLowerCase();
+                    if (sites[word].length < 4) {
+                        siteShort += " ";
+                    } else {
+                        break;
+                    }
+                }
+
+                if (!volsParSite[siteShort]) {
+                    volsParSite[siteShort] = 0;
+                }
+                volsParSite[siteShort] += 1;
+                // Compter le vol
+                volsParAn[annee].nb += 1;
+                // Compter les vols solo
+                if (vol.monitor === 'None') {
+                    volsParAn[annee].solo += 1;
+                }
+                // Ajouter durée (en minutes)
+                const [h, m, s] = vol.duration.split(':').map(Number);
+                volsParAn[annee].totalMinutes += h * 60 + m + s / 60;
+            });
+
+            // Activer DataTables
+            $('#volsTable').DataTable({
+                order: [[0, 'dec']],  // 🠔 Tri sur la première colonne, descendant
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
+                }
+            });
+
+            // Créer le graphique de distance
+            new Chart(document.getElementById('distanceChart'), {
+                type: 'bar',
+                data: {
+                    labels: dates.reverse(),
+                    datasets: [{
+                        label: 'Distance totale (km)',
+                        data: distances.reverse(),
+                        backgroundColor: '#3e95cd'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Ordre chronologique
+            const annees = Object.keys(volsParAn).sort();
+
+            // Données pour les graphiques
+            const nbVols = annees.map(a => volsParAn[a].nb);
+            const tpsVols = annees.map(a => volsParAn[a].totalMinutes / 60);
+
+            // Nombre de vols
+            new Chart(document.getElementById('nbVolsChart'), {
+                type: 'bar',
+                data: {
+                    labels: annees,
+                    datasets: [{
+                        label: 'Nombre de vols',
+                        data: nbVols,
+                        backgroundColor: '#4caf50',
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Temps de vol (h)',
+                        data: tpsVols,
+                        backgroundColor: '#2196f3',
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            // beginAtZero: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Nombre de vols'
+                            }
+                        },
+                        y1: {
+                            // beginAtZero: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Temps de vol (h)'
+                            },
+                            grid: {
+                                drawOnChartArea: false // Ne pas dessiner la grille pour cette échelle
+                            }
+                        }
+                    }
+                }
+            });
+
+            nbVolsSolo = annees.map(a => volsParAn[a].solo);
+            let total_vols = nbVols.reduce(
+                (accumulator, currentValue) => accumulator + currentValue,
+                initialValue = 0,
+            );
+            let total_vols_solo = nbVolsSolo.reduce(
+                (accumulator, currentValue) => accumulator + currentValue,
+                initialValue = 0,
+            );
+            let total_vols_ecole = total_vols - total_vols_solo;
+
+            // Nombre de vols solo
+            // Créer le graphique de distance
+            new Chart(document.getElementById('nbVolsSolo'), {
+                type: 'pie',
+                data: {
+                    labels: ['Vols école', 'Vols solo'],
+                    datasets: [{
+                        label: 'Nombre de vols',
+                        data: [total_vols_ecole, total_vols_solo],
+                        backgroundColor: ['#4caf50', '#2196f3']
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                        title: {
+                            display: true,
+                            text: 'Vols solo / école'
+                        }
+                    }
+                }
+            });
+
+            // Graphique des vols par site
+            let volsParSiteName = Object.entries(volsParSite).map(a => a[0]);
+            let volsParSiteValues = Object.entries(volsParSite).map(a => a[1]);
+            new Chart(document.getElementById('nbVolsSites'), {
+                type: 'pie',
+                data: {
+                    labels: volsParSiteName,
+                    datasets: [{
+                        label: 'Sites de vols',
+                        data: volsParSiteValues
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                        title: {
+                            display: true,
+                            text: 'Sites'
+                        }
+                    }
+                }
+            });
+        }
+
         fetch('book.json')
         // fetch('https://drive.google.com/uc?export=download&id=1W1dxk2-_e2nrIFApyKcDRbvXftNV_RiY')
             .then(response => response.json())
-            .then(data => {
-                const tbody = document.getElementById('tableBody');
-                const dates = [], distances = [];
-
-                book_data = data;
-
-                data.forEach(vol => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${vol.nbr}</td>
-                        <td>${vol.date}</td>
-                        <td>${vol.site}</td>
-                        <td>${vol.start_time}</td>
-                        <td>${vol.duration}</td>
-                        <td>${vol.distance_total.toFixed(1)}</td>
-                        <td>${vol.elevation_total.toFixed(1)}</td>
-                        <td>${vol.elevation_over_start.toFixed(1)}</td>
-                        <td>${vol.analyse}</td>
-                        <td>${vol.monitor}</td>
-                    `;
-                    tbody.appendChild(tr);
-
-                    // Pour les graphiques
-                    dates.push(vol.date);
-                    distances.push((vol.distance_total / 1000).toFixed(2)); // en km
-
-                    const annee = new Date(vol.date).getFullYear();
-                    // Initialisation des données par année
-                    if (!volsParAn[annee]) {
-                        volsParAn[annee] = {
-                            nb: 0,
-                            totalMinutes: 0,
-                            solo: 0
-                        };
-                    }
-                    // Vol par site
-                    let sites = vol.site.split(" ");
-                    let siteShort = "";
-
-                    for (word in sites) {
-                        siteShort += sites[word].toLowerCase();
-                        if (sites[word].length < 4) {
-                            siteShort += " ";
-                        } else {
-                            break;
-                        }
-                    }
-
-                    if (!volsParSite[siteShort]) {
-                        volsParSite[siteShort] = 0;
-                    }
-                    volsParSite[siteShort] += 1;
-                    // Compter le vol
-                    volsParAn[annee].nb += 1;
-                    // Compter les vols solo
-                    if (vol.monitor === 'None') {
-                        volsParAn[annee].solo += 1;
-                    }
-                    // Ajouter durée (en minutes)
-                    const [h, m, s] = vol.duration.split(':').map(Number);
-                    volsParAn[annee].totalMinutes += h * 60 + m + s / 60;
-                });
-
-                // Activer DataTables
-                $('#volsTable').DataTable({
-                    order: [[0, 'dec']],  // 🠔 Tri sur la première colonne, descendant
-                    language: {
-                        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
-                    }
-                });
-
-                // Créer le graphique de distance
-                new Chart(document.getElementById('distanceChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: dates.reverse(),
-                        datasets: [{
-                            label: 'Distance totale (km)',
-                            data: distances.reverse(),
-                            backgroundColor: '#3e95cd'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-
-                // Ordre chronologique
-                const annees = Object.keys(volsParAn).sort();
-
-                // Données pour les graphiques
-                const nbVols = annees.map(a => volsParAn[a].nb);
-                const tpsVols = annees.map(a => volsParAn[a].totalMinutes / 60);
-
-                // Nombre de vols
-                new Chart(document.getElementById('nbVolsChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: annees,
-                        datasets: [{
-                            label: 'Nombre de vols',
-                            data: nbVols,
-                            backgroundColor: '#4caf50',
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: 'Temps de vol (h)',
-                            data: tpsVols,
-                            backgroundColor: '#2196f3',
-                            yAxisID: 'y1'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                // beginAtZero: true,
-                                position: 'left',
-                                title: {
-                                    display: true,
-                                    text: 'Nombre de vols'
-                                }
-                            },
-                            y1: {
-                                // beginAtZero: true,
-                                position: 'right',
-                                title: {
-                                    display: true,
-                                    text: 'Temps de vol (h)'
-                                },
-                                grid: {
-                                    drawOnChartArea: false // Ne pas dessiner la grille pour cette échelle
-                                }
-                            }
-                        }
-                    }
-                });
-
-                nbVolsSolo = annees.map(a => volsParAn[a].solo);
-                let total_vols = nbVols.reduce(
-                    (accumulator, currentValue) => accumulator + currentValue,
-                    initialValue = 0,
-                );
-                let total_vols_solo = nbVolsSolo.reduce(
-                    (accumulator, currentValue) => accumulator + currentValue,
-                    initialValue = 0,
-                );
-                let total_vols_ecole = total_vols - total_vols_solo;
-
-                // Nombre de vols solo
-                // Créer le graphique de distance
-                new Chart(document.getElementById('nbVolsSolo'), {
-                    type: 'pie',
-                    data: {
-                        labels: ['Vols école', 'Vols solo'],
-                        datasets: [{
-                            label: 'Nombre de vols',
-                            data: [total_vols_ecole, total_vols_solo],
-                            backgroundColor: ['#4caf50', '#2196f3']
-                        }]
-                    },
-                    options: {
-                        plugins: {
-                            legend: {
-                                display: false,
-                            },
-                            title: {
-                                display: true,
-                                text: 'Vols solo / école'
-                            }
-                        }
-                    }
-                });
-
-                // Graphique des vols par site
-                let volsParSiteName = Object.entries(volsParSite).map(a => a[0]);
-                let volsParSiteValues = Object.entries(volsParSite).map(a => a[1]);
-                new Chart(document.getElementById('nbVolsSites'), {
-                    type: 'pie',
-                    data: {
-                        labels: volsParSiteName,
-                        datasets: [{
-                            label: 'Sites de vols',
-                            data: volsParSiteValues
-                        }]
-                    },
-                    options: {
-                        plugins: {
-                            legend: {
-                                display: false,
-                            },
-                            title: {
-                                display: true,
-                                text: 'Sites'
-                            }
-                        }
-                    }
-                });
-            });
+            .then(data => updateTable(data));
 
         // Ajoute l’événement sur le bouton
         document.getElementById('saveJsonBtn').addEventListener('click', function () {
@@ -345,6 +354,7 @@
             new_flight_data.analyse = comments.replace(/site:.*\n/, '').replace(/monitor:.*\n/, '').trim();
 
             book_data.unshift(new_flight_data);            
+            updateTable(book_data);
         });
 
         // Load file button
