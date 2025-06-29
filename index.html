@@ -11,32 +11,26 @@
             font-family: Arial, sans-serif;
             margin: 20px;
         }
-
         table {
             width: 100%;
             font-size: 14px;
         }
-
         #graphs {
             display: flex;
             height: 33vh;
             align-items: stretch;
             justify-content: space-around;
         }
-
-        #nbVolsChart {
+        #nb_flight_chart {
             max-width: 50%;
         }
-
-        #nbVolsSolo {
+        #nb_flight_solo {
             max-width: 100%;
         }
-
-        #nbVolsSites {
+        #nb_flight_per_site {
             max-width: 25%;
         }
-
-        #distanceChart {
+        #distance_chart {
             margin: 20px auto;
             height: 33vh;
         }
@@ -44,23 +38,23 @@
 </head>
 
 <body>
-    <h2>Journal des vols</h2>
+    <h2>Flight book</h2>
 
-    <button id="saveJsonBtn">💾 Télécharger le JSON</button>
+    <button id="saveJsonBtn">💾 Save to file</button>
 
     <div id="menu_button">
         <label id="my-file-selector" for="file-selector"></label>
         <input type="file" id="file-selector" accept=".igc, .gpx">
     </div>
 
-    <table id="volsTable" class="display">
+    <table id="flight_table" class="display">
         <thead>
             <tr>
                 <th>Nbr</th>
                 <th>Date</th>
                 <th>Site</th>
                 <th>Start time</th>
-                <th>Durée</th>
+                <th>Duration</th>
                 <th>Distance (m)</th>
                 <th>elevation gains</th>
                 <th>elevation over start</th>
@@ -68,21 +62,21 @@
                 <th>Monitor</th>
             </tr>
         </thead>
-        <tbody id="tableBody"></tbody>
+        <tbody id="table_body"></tbody>
     </table>
 
     <div id="graphs">
         <!-- Chart.js container -->
-        <canvas id="nbVolsChart" height="100"></canvas>
+        <canvas id="nb_flight_chart" height="100"></canvas>
 
         <!-- Chart.js container -->
-        <canvas id="nbVolsSolo"></canvas>
+        <canvas id="nb_flight_solo"></canvas>
 
         <!-- Chart.js container -->
-        <canvas id="nbVolsSites"></canvas>
+        <canvas id="nb_flight_per_site"></canvas>
     </div>
     <!-- Chart.js container -->
-    <canvas id="distanceChart" height="100"></canvas>
+    <canvas id="distance_chart" height="100"></canvas>
 
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -91,21 +85,21 @@
     <script src="bundle.js"></script>
 
     <script>
-        const volsParAn = {}; // Regrouper les données par année
-        const volsParSite = {};
+        const flight_per_year = {}; // Regrouper les données par année
+        const flight_per_site = {};
 
         var book_data = null;
 
-        function updateTable(data) {
-            const tbody = document.getElementById('tableBody');
+        function update_table(data) {
+            const tbody = document.getElementById('table_body');
             const dates = [], distances = [];
 
             // Reinit table data
             tbody.innerHTML = '';
-            $('#volsTable').DataTable().clear().destroy();
+            $('#flight_table').DataTable().clear().destroy();
             // Reinit charts
-            const allCharts = Chart.instances ? Object.values(Chart.instances) : [];
-            allCharts.forEach(chart => chart.destroy());
+            const all_charts = Chart.instances ? Object.values(Chart.instances) : [];
+            all_charts.forEach(chart => chart.destroy());
 
             book_data = data;
 
@@ -129,45 +123,45 @@
                 dates.push(vol.date);
                 distances.push((vol.distance_total / 1000).toFixed(2)); // en km
 
-                const annee = new Date(vol.date).getFullYear();
+                const year = new Date(vol.date).getFullYear();
                 // Initialisation des données par année
-                if (!volsParAn[annee]) {
-                    volsParAn[annee] = {
+                if (!flight_per_year[year]) {
+                    flight_per_year[year] = {
                         nb: 0,
-                        totalMinutes: 0,
+                        total_in_minutes: 0,
                         solo: 0
                     };
                 }
                 // Vol par site
                 let sites = vol.site.split(" ");
-                let siteShort = "";
+                let site_short_name = "";
 
                 for (word in sites) {
-                    siteShort += sites[word].toLowerCase();
+                    site_short_name += sites[word].toLowerCase();
                     if (sites[word].length < 4) {
-                        siteShort += " ";
+                        site_short_name += " ";
                     } else {
                         break;
                     }
                 }
 
-                if (!volsParSite[siteShort]) {
-                    volsParSite[siteShort] = 0;
+                if (!flight_per_site[site_short_name]) {
+                    flight_per_site[site_short_name] = 0;
                 }
-                volsParSite[siteShort] += 1;
+                flight_per_site[site_short_name] += 1;
                 // Compter le vol
-                volsParAn[annee].nb += 1;
+                flight_per_year[year].nb += 1;
                 // Compter les vols solo
                 if (vol.monitor === 'None') {
-                    volsParAn[annee].solo += 1;
+                    flight_per_year[year].solo += 1;
                 }
                 // Ajouter durée (en minutes)
                 const [h, m, s] = vol.duration.split(':').map(Number);
-                volsParAn[annee].totalMinutes += h * 60 + m + s / 60;
+                flight_per_year[year].total_in_minutes += h * 60 + m + s / 60;
             });
 
             // Activer DataTables
-            $('#volsTable').DataTable({
+            $('#flight_table').DataTable({
                 order: [[0, 'dec']],  // 🠔 Tri sur la première colonne, descendant
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
@@ -175,7 +169,7 @@
             });
 
             // Créer le graphique de distance
-            new Chart(document.getElementById('distanceChart'), {
+            new Chart(document.getElementById('distance_chart'), {
                 type: 'bar',
                 data: {
                     labels: dates.reverse(),
@@ -196,17 +190,17 @@
             });
 
             // Ordre chronologique
-            const annees = Object.keys(volsParAn).sort();
+            const years = Object.keys(flight_per_year).sort();
 
             // Données pour les graphiques
-            const nbVols = annees.map(a => volsParAn[a].nb);
-            const tpsVols = annees.map(a => volsParAn[a].totalMinutes / 60);
+            const nbVols = years.map(a => flight_per_year[a].nb);
+            const tpsVols = years.map(a => flight_per_year[a].total_in_minutes / 60);
 
             // Nombre de vols
-            new Chart(document.getElementById('nbVolsChart'), {
+            new Chart(document.getElementById('nb_flight_chart'), {
                 type: 'bar',
                 data: {
-                    labels: annees,
+                    labels: years,
                     datasets: [{
                         label: 'Nombre de vols',
                         data: nbVols,
@@ -246,12 +240,12 @@
                 }
             });
 
-            nbVolsSolo = annees.map(a => volsParAn[a].solo);
+            nb_flight_solo = years.map(a => flight_per_year[a].solo);
             let total_vols = nbVols.reduce(
                 (accumulator, currentValue) => accumulator + currentValue,
                 initialValue = 0,
             );
-            let total_vols_solo = nbVolsSolo.reduce(
+            let total_vols_solo = nb_flight_solo.reduce(
                 (accumulator, currentValue) => accumulator + currentValue,
                 initialValue = 0,
             );
@@ -259,7 +253,7 @@
 
             // Nombre de vols solo
             // Créer le graphique de distance
-            new Chart(document.getElementById('nbVolsSolo'), {
+            new Chart(document.getElementById('nb_flight_solo'), {
                 type: 'pie',
                 data: {
                     labels: ['Vols école', 'Vols solo'],
@@ -283,15 +277,15 @@
             });
 
             // Graphique des vols par site
-            let volsParSiteName = Object.entries(volsParSite).map(a => a[0]);
-            let volsParSiteValues = Object.entries(volsParSite).map(a => a[1]);
-            new Chart(document.getElementById('nbVolsSites'), {
+            let flight_per_siteName = Object.entries(flight_per_site).map(a => a[0]);
+            let flight_per_siteValues = Object.entries(flight_per_site).map(a => a[1]);
+            new Chart(document.getElementById('nb_flight_per_site'), {
                 type: 'pie',
                 data: {
-                    labels: volsParSiteName,
+                    labels: flight_per_siteName,
                     datasets: [{
                         label: 'Sites de vols',
-                        data: volsParSiteValues
+                        data: flight_per_siteValues
                     }]
                 },
                 options: {
@@ -311,7 +305,7 @@
         fetch('book.json')
         // fetch('https://drive.google.com/uc?export=download&id=1W1dxk2-_e2nrIFApyKcDRbvXftNV_RiY')
             .then(response => response.json())
-            .then(data => updateTable(data));
+            .then(data => update_table(data));
 
         // Ajoute l’événement sur le bouton
         document.getElementById('saveJsonBtn').addEventListener('click', function () {
@@ -354,15 +348,15 @@
             new_flight_data.analyse = comments.replace(/site:.*\n/, '').replace(/monitor:.*\n/, '').trim();
 
             book_data.unshift(new_flight_data);            
-            updateTable(book_data);
+            update_table(book_data);
         });
 
         // Load file button
-        const fileSelector = document.getElementById('file-selector');
-        fileSelector.addEventListener('change', (event) => {
-            const fileList = event.target.files;
-            file_name = fileList[0].name;	// Get only the file name
-            file_reader.readAsText(fileList[0]);
+        const file_selector = document.getElementById('file-selector');
+        file_selector.addEventListener('change', (event) => {
+            const file_list = event.target.files;
+            file_name = file_list[0].name;	// Get only the file name
+            file_reader.readAsText(file_list[0]);
         });
 
     </script>
