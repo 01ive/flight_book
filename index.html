@@ -47,6 +47,21 @@
         <input type="file" id="file-selector" accept=".igc, .gpx">
     </div>
 
+    <div>
+        <form id="addRowForm">
+            <button type="submit">➕ Manual entry</button>
+            <input type="date"   id="date_in" required>
+            <input type="text"   id="site_in" placeholder="Site" required>
+            <input type="time"   id="start_time_in" placeholder="Start time" required>
+            <input type="time"   id="duration_in" placeholder="Duration" required>
+            <input type="number" id="distance_total_in" placeholder="Distance (m)">
+            <input type="number" id="elevation_max_in" placeholder="Elevation gains (m)">
+            <input type="number" id="elevation_total_in" placeholder="Elevation over start (m)">
+            <input type="text"   id="analyse_in" placeholder="Analyse" required>
+            <input type="text"   id="monitor_in" placeholder="Monitor" required>
+        </form>
+    </div>
+
     <table id="flight_table" class="display">
         <thead>
             <tr>
@@ -89,6 +104,7 @@
         const flight_per_site = {};
 
         var book_data = null;
+        var flight_table = null;
 
         function update_table(data) {
             const tbody = document.getElementById('table_body');
@@ -161,7 +177,7 @@
             });
 
             // Activer DataTables
-            $('#flight_table').DataTable({
+            flight_table = $('#flight_table').DataTable({
                 order: [[0, 'dec']],  // 🠔 Tri sur la première colonne, descendant
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
@@ -359,6 +375,26 @@
             file_reader.readAsText(file_list[0]);
         });
 
+        document.getElementById('addRowForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const newRow = [
+                flight_table.rows().count() + 1,
+                document.getElementById('date_in').value,
+                document.getElementById('site_in').value,
+                document.getElementById('start_time_in').value,
+                document.getElementById('duration_in').value,
+                parseFloat(document.getElementById('distance_total_in').value).toFixed(1),
+                parseFloat(document.getElementById('elevation_max_in').value).toFixed(1),
+                parseFloat(document.getElementById('elevation_total_in').value).toFixed(1),
+                document.getElementById('analyse_in').value,
+                document.getElementById('monitor_in').value
+            ];
+
+            flight_table.row.add(newRow).draw();
+
+            this.reset();
+        });
     </script>
 
 </body>
