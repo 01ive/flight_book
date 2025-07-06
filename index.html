@@ -11,13 +11,49 @@
             font-family: Arial, sans-serif;
             margin: 20px;
         }
+        #tile_line {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        #menu_button {
+            display: inline-block;
+            width: auto;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            background-color: rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+            padding: 1px 5px;
+        }
+        #menu_button:hover {
+            background-color: lightgray;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        #my-file-selector {
+            display: block;
+            cursor: pointer;
+            /* background-color: white; */
+            height: 100%;
+            border-radius: 2px;
+        }
+        #manual_entry {
+            visibility: hidden; 
+            position: absolute;
+        }
         table {
             width: 100%;
             font-size: 14px;
         }
         #graphs {
             display: flex;
-            height: 33vh;
+            flex-direction: column;
+        }
+        #global_graphs {
+            display: flex;
+            max-height: 33vh;
+            flex-wrap: wrap;
             align-items: stretch;
             justify-content: space-around;
         }
@@ -31,25 +67,30 @@
             max-width: 25%;
         }
         #distance_chart {
-            margin: 20px auto;
-            height: 33vh;
+            max-height: 33vh;
+            max-width: 100vw;
         }
     </style>
 </head>
 
 <body>
-    <h2>Flight book</h2>
+    <div id="tile_line">
+        <h2 style="display: inline-block;">Flight book</h2>
 
-    <button id="saveJsonBtn">💾 Save to file</button>
+        <div>
+            <div id="menu_button">
+                <label id="my-file-selector" for="file-selector">➕ Add track</label>
+                <input type="file" id="file-selector" accept=".igc, .gpx" placeholder="Select a file">
+            </div>
 
-    <div id="menu_button">
-        <label id="my-file-selector" for="file-selector"></label>
-        <input type="file" id="file-selector" accept=".igc, .gpx">
+            <button id="manual_entry_button" type="submit">➕ Manual entry</button>
+
+            <button id="save_button_json">💾 Save to file</button>
+        </div>
     </div>
 
-    <div>
+    <div id="manual_entry">
         <form id="addRowForm">
-            <button type="submit">➕ Manual entry</button>
             <input type="date"   id="date_in" required>
             <input type="text"   id="site_in" placeholder="Site" required>
             <input type="time"   id="start_time_in" placeholder="Start time" required>
@@ -59,6 +100,7 @@
             <input type="number" id="elevation_total_in" placeholder="Elevation over start (m)">
             <input type="text"   id="analyse_in" placeholder="Analyse" required>
             <input type="text"   id="monitor_in" placeholder="Monitor" required>
+            <button type="submit">Enter</button>
         </form>
     </div>
 
@@ -81,17 +123,20 @@
     </table>
 
     <div id="graphs">
-        <!-- Chart.js container -->
-        <canvas id="nb_flight_chart" height="100"></canvas>
+        <div id="global_graphs">
+            <!-- Chart.js container -->
+            <canvas id="nb_flight_chart"></canvas>
 
-        <!-- Chart.js container -->
-        <canvas id="nb_flight_solo"></canvas>
+            <!-- Chart.js container -->
+            <canvas id="nb_flight_solo"></canvas>
 
-        <!-- Chart.js container -->
-        <canvas id="nb_flight_per_site"></canvas>
+            <!-- Chart.js container -->
+            <canvas id="nb_flight_per_site"></canvas>
+
+            <!-- Chart.js container -->
+            <canvas id="distance_chart"></canvas>
+        </div>
     </div>
-    <!-- Chart.js container -->
-    <canvas id="distance_chart" height="100"></canvas>
 
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -100,29 +145,41 @@
     <script src="bundle.js"></script>
 
     <script>
-        const flight_per_year = {}; // Regrouper les données par année
-        const flight_per_site = {};
+        // Global variables
+        var book_data = null;       // Json data strucure
+        var flight_table = null;    // DataTable instance
+        const flight_per_year = {}; // Flight grouped by year
+        const flight_per_site = {}; // Flight grouped by site       
 
-        var book_data = null;
-        var flight_table = null;
+        // Init manual entry form visibility
+        document.getElementById('manual_entry').style.visibility = 'hidden';
 
+        // Create flight table
         function update_table(data) {
             const tbody = document.getElementById('table_body');
             const dates = [], distances = [];
 
-            // Reinit table data
+            // Reinit table data (for refresh)
             tbody.innerHTML = '';
             $('#flight_table').DataTable().clear().destroy();
-            // Reinit charts
+            // Reinit charts (for refresh)
             const all_charts = Chart.instances ? Object.values(Chart.instances) : [];
             all_charts.forEach(chart => chart.destroy());
 
+            // Save data to json flight book
             book_data = data;
 
             data.forEach(vol => {
                 const tr = document.createElement('tr');
+
+                // Manage flight link if track file is available or not
+                var file_link = vol.nbr;
+                if (vol.file_name) {
+                    file_link = `<a href="http://01ive.free.fr/standalone/?file=http://01ive.free.fr/tracks_com/${vol.file_name}">${vol.nbr}<a>`;
+                }
+                
                 tr.innerHTML = `
-                    <td><a href="http://01ive.free.fr/standalone/?file=http://01ive.free.fr/tracks_com/${vol.file_name}">${vol.nbr}<a></td>
+                    <td>${file_link}</td>
                     <td>${vol.date}</td>
                     <td>${vol.site}</td>
                     <td>${vol.start_time}</td>
@@ -135,19 +192,10 @@
                 `;
                 tbody.appendChild(tr);
 
-                // Pour les graphiques
+                // Prepare dates and distances dict for chart usage
                 dates.push(vol.date);
                 distances.push((vol.distance_total / 1000).toFixed(2)); // en km
 
-                const year = new Date(vol.date).getFullYear();
-                // Initialisation des données par année
-                if (!flight_per_year[year]) {
-                    flight_per_year[year] = {
-                        nb: 0,
-                        total_in_minutes: 0,
-                        solo: 0
-                    };
-                }
                 // Create short name for site
                 let site_short_name = "";
                 let sites = vol.site.split(" ");    // Split site name using spaces
@@ -159,59 +207,48 @@
                         break;
                     }
                 }
-
+                // Group flights per site
                 if (!flight_per_site[site_short_name]) {
                     flight_per_site[site_short_name] = 0;
                 }
                 flight_per_site[site_short_name] += 1;
-                // Compter le vol
+
+                // Group data per year
+                const year = new Date(vol.date).getFullYear();
+                if (!flight_per_year[year]) {
+                    flight_per_year[year] = {
+                        nb: 0,
+                        total_in_minutes: 0,
+                        solo: 0
+                    };
+                }
+                // Add flight to counter
                 flight_per_year[year].nb += 1;
-                // Compter les vols solo
+                // Count solo flights
                 if (vol.monitor === 'None') {
                     flight_per_year[year].solo += 1;
                 }
-                // Ajouter durée (en minutes)
+                // Add duration in minutes for year
                 const [h, m, s] = vol.duration.split(':').map(Number);
                 flight_per_year[year].total_in_minutes += h * 60 + m + s / 60;
-            });
+            }); // End of data.forEach
 
-            // Activer DataTables
+            // Create DataTables
             flight_table = $('#flight_table').DataTable({
-                order: [[0, 'dec']],  // 🠔 Tri sur la première colonne, descendant
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json'
-                }
+                order: [[0, 'dec']],  // Order on first column, decrease
+                autoWidth: false,
+                columnDefs: [
+                    { targets: 8, width: '20%' },    // Analysis column
+                    { targets: '_all', width: '1%' } // Default
+                ],
             });
 
-            // Créer le graphique de distance
-            new Chart(document.getElementById('distance_chart'), {
-                type: 'bar',
-                data: {
-                    labels: dates.reverse(),
-                    datasets: [{
-                        label: 'Distance totale (km)',
-                        data: distances.reverse(),
-                        backgroundColor: '#3e95cd'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-
-            // Ordre chronologique
+            // Prepare data for charts
             const years = Object.keys(flight_per_year).sort();
-
-            // Données pour les graphiques
             const nbVols = years.map(a => flight_per_year[a].nb);
             const tpsVols = years.map(a => flight_per_year[a].total_in_minutes / 60);
 
-            // Nombre de vols
+            // Number of flights and flight time per year
             new Chart(document.getElementById('nb_flight_chart'), {
                 type: 'bar',
                 data: {
@@ -233,7 +270,6 @@
                     responsive: true,
                     scales: {
                         y: {
-                            // beginAtZero: true,
                             position: 'left',
                             title: {
                                 display: true,
@@ -241,20 +277,20 @@
                             }
                         },
                         y1: {
-                            // beginAtZero: true,
                             position: 'right',
                             title: {
                                 display: true,
                                 text: 'Temps de vol (h)'
                             },
                             grid: {
-                                drawOnChartArea: false // Ne pas dessiner la grille pour cette échelle
+                                drawOnChartArea: false
                             }
                         }
                     }
                 }
-            });
+            }); // End of nb_flight_chart
 
+            // Prepare data for solo flights chart
             nb_flight_solo = years.map(a => flight_per_year[a].solo);
             let total_vols = nbVols.reduce(
                 (accumulator, currentValue) => accumulator + currentValue,
@@ -266,8 +302,7 @@
             );
             let total_vols_ecole = total_vols - total_vols_solo;
 
-            // Nombre de vols solo
-            // Créer le graphique de distance
+            // Number of solo flights chart
             new Chart(document.getElementById('nb_flight_solo'), {
                 type: 'pie',
                 data: {
@@ -289,9 +324,9 @@
                         }
                     }
                 }
-            });
+            }); // End of nb_flight_solo
 
-            // Graphique des vols par site
+            // Flight per site chart
             let flight_per_siteName = Object.entries(flight_per_site).map(a => a[0]);
             let flight_per_siteValues = Object.entries(flight_per_site).map(a => a[1]);
             new Chart(document.getElementById('nb_flight_per_site'), {
@@ -314,24 +349,58 @@
                         }
                     }
                 }
-            });
-        }
+            }); // End of nb_flight_per_site
 
+            // Add distance chart
+            new Chart(document.getElementById('distance_chart'), {
+                type: 'bar',
+                data: {
+                    labels: dates.reverse(),
+                    datasets: [{
+                        label: 'Distance totale (km)',
+                        data: distances.reverse(),
+                        backgroundColor: '#3e95cd'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            }); // End of distance_chart
+        }   // End of update_table function
+
+        // Add flight to book data and table
+        function add_flight_to_book(flight) {
+            flight.nbr = book_data.length + 1;
+            book_data.unshift(flight);
+            // Manage flight link if track file is available or not
+            var file_link = flight.nbr;
+            if (flight.file_name) {
+                file_link = `<a href="http://01ive.free.fr/standalone/?file=http://01ive.free.fr/tracks_com/${flight.file_name}">${flight.nbr}<a>`;
+            }
+            const newRow = [
+                file_link,
+                flight.date,
+                flight.site,
+                flight.start_time,
+                flight.duration,
+                flight.distance_total,
+                flight.elevation_max,
+                flight.elevation_total,
+                flight.analyse,
+                flight.monitor
+            ];
+            flight_table.row.add(newRow).draw();
+        }   // End of add_flight_to_book function
+
+        // Load flight book data from JSON file
         fetch('book.json')
-        // fetch('https://drive.google.com/uc?export=download&id=1W1dxk2-_e2nrIFApyKcDRbvXftNV_RiY')
             .then(response => response.json())
             .then(data => update_table(data));
-
-        // Ajoute l’événement sur le bouton
-        document.getElementById('saveJsonBtn').addEventListener('click', function () {
-            const blob = new Blob([JSON.stringify(book_data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'vols-export.json';
-            a.click();
-            URL.revokeObjectURL(url);
-        });
 
         // Create file reader object
         var file_name = null;
@@ -365,7 +434,7 @@
             add_flight_to_book(new_flight_data);
         });
 
-        // Load file button
+        // Event on load file button
         const file_selector = document.getElementById('file-selector');
         file_selector.addEventListener('change', (event) => {
             const file_list = event.target.files;
@@ -373,6 +442,19 @@
             file_reader.readAsText(file_list[0]);
         });
 
+        // Envent on manual_entry_button
+        document.getElementById('manual_entry_button').addEventListener('click', function () {
+            const manual_entry = document.getElementById('manual_entry');
+            if (manual_entry.style.visibility === 'hidden') {
+                manual_entry.style.visibility = 'visible';
+                manual_entry.style.position = 'static';
+            } else {
+                manual_entry.style.visibility = 'hidden';
+                manual_entry.style.position = 'absolute';
+            }
+        });
+
+        // Event on addRowForm submit button
         document.getElementById('addRowForm').addEventListener('submit', function (e) {
             e.preventDefault();
 
@@ -387,31 +469,27 @@
             new_flight_data.elevation_total = parseFloat(document.getElementById('elevation_total_in').value) || 0;
             new_flight_data.analyse = document.getElementById('analyse_in').value;
             new_flight_data.monitor = document.getElementById('monitor_in').value;
+            new_flight_data.file_name = null;
             
             add_flight_to_book(new_flight_data);
 
             this.reset();
+
+            const manual_entry = document.getElementById('manual_entry');
+            manual_entry.style.visibility = 'hidden';
+            manual_entry.style.position = 'absolute';
         });
 
-        function add_flight_to_book(flight) {
-            // Ajouter le vol à book_data
-            flight.nbr = book_data.length + 1;
-            book_data.unshift(flight);
-
-            const newRow = [
-                flight.nbr,
-                flight.date,
-                flight.site,
-                flight.start_time,
-                flight.duration,
-                flight.distance_total,
-                flight.elevation_max,
-                flight.elevation_total,
-                flight.analyse,
-                flight.monitor
-            ];
-            flight_table.row.add(newRow).draw();
-        }
+        // Event on save_button_json
+        document.getElementById('save_button_json').addEventListener('click', function () {
+            const blob = new Blob([JSON.stringify(book_data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'vols-export.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
     </script>
 
 </body>
