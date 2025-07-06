@@ -122,7 +122,7 @@
             data.forEach(vol => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${vol.nbr}</td>
+                    <td><a href="http://01ive.free.fr/standalone/?file=http://01ive.free.fr/tracks_com/${vol.file_name}">${vol.nbr}<a></td>
                     <td>${vol.date}</td>
                     <td>${vol.site}</td>
                     <td>${vol.start_time}</td>
@@ -148,13 +148,12 @@
                         solo: 0
                     };
                 }
-                // Vol par site
-                let sites = vol.site.split(" ");
+                // Create short name for site
                 let site_short_name = "";
-
-                for (word in sites) {
+                let sites = vol.site.split(" ");    // Split site name using spaces
+                for (word in sites) {               // Loop on each word
                     site_short_name += sites[word].toLowerCase();
-                    if (sites[word].length < 4) {
+                    if (sites[word].length < 4) {   // If word is too short add a space and loop to next word else short name is done
                         site_short_name += " ";
                     } else {
                         break;
@@ -363,8 +362,7 @@
             comments = comments.join('\n');
             new_flight_data.analyse = comments.replace(/site:.*\n/, '').replace(/monitor:.*\n/, '').trim();
 
-            book_data.unshift(new_flight_data);            
-            update_table(book_data);
+            add_flight_to_book(new_flight_data);
         });
 
         // Load file button
@@ -378,23 +376,42 @@
         document.getElementById('addRowForm').addEventListener('submit', function (e) {
             e.preventDefault();
 
-            const newRow = [
-                flight_table.rows().count() + 1,
-                document.getElementById('date_in').value,
-                document.getElementById('site_in').value,
-                document.getElementById('start_time_in').value,
-                document.getElementById('duration_in').value,
-                parseFloat(document.getElementById('distance_total_in').value).toFixed(1),
-                parseFloat(document.getElementById('elevation_max_in').value).toFixed(1),
-                parseFloat(document.getElementById('elevation_total_in').value).toFixed(1),
-                document.getElementById('analyse_in').value,
-                document.getElementById('monitor_in').value
-            ];
+            new_flight_data = {};
 
-            flight_table.row.add(newRow).draw();
+            new_flight_data.date = document.getElementById('date_in').value;
+            new_flight_data.site = document.getElementById('site_in').value;
+            new_flight_data.start_time = document.getElementById('start_time_in').value;
+            new_flight_data.duration = document.getElementById('duration_in').value;
+            new_flight_data.distance_total = parseFloat(document.getElementById('distance_total_in').value) || 0;
+            new_flight_data.elevation_max = parseFloat(document.getElementById('elevation_max_in').value) || 0;
+            new_flight_data.elevation_total = parseFloat(document.getElementById('elevation_total_in').value) || 0;
+            new_flight_data.analyse = document.getElementById('analyse_in').value;
+            new_flight_data.monitor = document.getElementById('monitor_in').value;
+            
+            add_flight_to_book(new_flight_data);
 
             this.reset();
         });
+
+        function add_flight_to_book(flight) {
+            // Ajouter le vol à book_data
+            flight.nbr = book_data.length + 1;
+            book_data.unshift(flight);
+
+            const newRow = [
+                flight.nbr,
+                flight.date,
+                flight.site,
+                flight.start_time,
+                flight.duration,
+                flight.distance_total,
+                flight.elevation_max,
+                flight.elevation_total,
+                flight.analyse,
+                flight.monitor
+            ];
+            flight_table.row.add(newRow).draw();
+        }
     </script>
 
 </body>
