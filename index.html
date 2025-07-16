@@ -429,7 +429,7 @@
                 }
             }
             comments = comments.join('\n');
-            new_flight_data.analyse = comments.replace(/site:.*\n/, '').replace(/monitor:.*\n/, '').trim();
+            new_flight_data.analyse = comments.replace(/site:.*\n?/, '').replace(/monitor:.*\n?/, '').trim();
 
             add_flight_to_book(new_flight_data);
         });
