@@ -96,8 +96,8 @@
             <input type="time"   id="start_time_in" placeholder="Start time" required>
             <input type="time"   id="duration_in" placeholder="Duration" required>
             <input type="number" id="distance_total_in" placeholder="Distance (m)">
-            <input type="number" id="elevation_max_in" placeholder="Elevation gains (m)">
-            <input type="number" id="elevation_total_in" placeholder="Elevation over start (m)">
+            <input type="number" id="elevation_total" placeholder="Elevation gains (m)">
+            <input type="number" id="elevation_start" placeholder="Elevation over start (m)">
             <input type="text"   id="analyse_in" placeholder="Analyse" required>
             <input type="text"   id="monitor_in" placeholder="Monitor" required>
             <button type="submit">Enter</button>
@@ -464,9 +464,9 @@
             new_flight_data.site = document.getElementById('site_in').value;
             new_flight_data.start_time = document.getElementById('start_time_in').value;
             new_flight_data.duration = document.getElementById('duration_in').value;
-            new_flight_data.distance_total = parseFloat(document.getElementById('distance_total_in').value) || 0;
-            new_flight_data.elevation_max = parseFloat(document.getElementById('elevation_max_in').value) || 0;
-            new_flight_data.elevation_total = parseFloat(document.getElementById('elevation_total_in').value) || 0;
+            new_flight_data.distance_total = parseFloat(document.getElementById('distance_total_in').value.toPrecision(4)) || 0;
+            new_flight_data.elevation_total = parseFloat(document.getElementById('elevation_total').value) || 0;
+            new_flight_data.elevation_start = parseFloat(document.getElementById('elevation_start').value) || 0;
             new_flight_data.analyse = document.getElementById('analyse_in').value;
             new_flight_data.monitor = document.getElementById('monitor_in').value;
             new_flight_data.file_name = null;
