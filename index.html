@@ -94,10 +94,10 @@
             <input type="date"   id="date_in" required>
             <input type="text"   id="site_in" placeholder="Site" required>
             <input type="time"   id="start_time_in" placeholder="Start time" required>
-            <input type="time"   id="duration_in" placeholder="Duration" required>
+            <input type="time"   id="duration_in" placeholder="Duration" required step="1">
             <input type="number" id="distance_total_in" placeholder="Distance (m)">
             <input type="number" id="elevation_total" placeholder="Elevation gains (m)">
-            <input type="number" id="elevation_start" placeholder="Elevation over start (m)">
+            <input type="number" id="elevation_over_start" placeholder="Elevation over start (m)">
             <input type="text"   id="analyse_in" placeholder="Analyse" required>
             <input type="text"   id="monitor_in" placeholder="Monitor" required>
             <button type="submit">Enter</button>
@@ -148,50 +148,22 @@
         // Global variables
         var book_data = null;       // Json data strucure
         var flight_table = null;    // DataTable instance
-        const flight_per_year = {}; // Flight grouped by year
-        const flight_per_site = {}; // Flight grouped by site       
+        
 
         // Init manual entry form visibility
         document.getElementById('manual_entry').style.visibility = 'hidden';
 
-        // Create flight table
-        function update_table(data) {
-            const tbody = document.getElementById('table_body');
+        function update_charts(data) {
             const dates = [], distances = [];
 
-            // Reinit table data (for refresh)
-            tbody.innerHTML = '';
-            $('#flight_table').DataTable().clear().destroy();
+            const flight_per_year = {}; // Flight grouped by year
+            const flight_per_site = {}; // Flight grouped by site
+
             // Reinit charts (for refresh)
             const all_charts = Chart.instances ? Object.values(Chart.instances) : [];
             all_charts.forEach(chart => chart.destroy());
 
-            // Save data to json flight book
-            book_data = data;
-
             data.forEach(vol => {
-                const tr = document.createElement('tr');
-
-                // Manage flight link if track file is available or not
-                var file_link = vol.nbr;
-                if (vol.file_name) {
-                    file_link = `<a href="http://01ive.free.fr/standalone/?file=http://01ive.free.fr/tracks_com/${vol.file_name}">${vol.nbr}<a>`;
-                }
-                
-                tr.innerHTML = `
-                    <td>${file_link}</td>
-                    <td>${vol.date}</td>
-                    <td>${vol.site}</td>
-                    <td>${vol.start_time}</td>
-                    <td>${vol.duration}</td>
-                    <td>${vol.distance_total.toFixed(1)}</td>
-                    <td>${vol.elevation_total.toFixed(1)}</td>
-                    <td>${vol.elevation_over_start.toFixed(1)}</td>
-                    <td>${vol.analyse}</td>
-                    <td>${vol.monitor}</td>
-                `;
-                tbody.appendChild(tr);
-
                 // Prepare dates and distances dict for chart usage
                 dates.push(vol.date);
                 distances.push((vol.distance_total / 1000).toFixed(2)); // en km
@@ -232,16 +204,6 @@
                 const [h, m, s] = vol.duration.split(':').map(Number);
                 flight_per_year[year].total_in_minutes += h * 60 + m + s / 60;
             }); // End of data.forEach
-
-            // Create DataTables
-            flight_table = $('#flight_table').DataTable({
-                order: [[0, 'dec']],  // Order on first column, decrease
-                autoWidth: false,
-                columnDefs: [
-                    { targets: 8, width: '20%' },    // Analysis column
-                    { targets: '_all', width: '1%' } // Default
-                ],
-            });
 
             // Prepare data for charts
             const years = Object.keys(flight_per_year).sort();
@@ -371,6 +333,49 @@
                     }
                 }
             }); // End of distance_chart
+        }
+
+        // update_table
+        function update_table(data) {
+            const tbody = document.getElementById('table_body');
+
+            // Reinit table data (for refresh)
+            tbody.innerHTML = '';
+            $('#flight_table').DataTable().clear().destroy();
+
+            data.forEach(vol => {
+                const tr = document.createElement('tr');
+
+                // Manage flight link if track file is available or not
+                var file_link = vol.nbr;
+                if (vol.file_name) {
+                    file_link = `<a href="http://01ive.free.fr/standalone/?file=http://01ive.free.fr/tracks_com/${vol.file_name}">${vol.nbr}<a>`;
+                }
+                
+                tr.innerHTML = `
+                    <td>${file_link}</td>
+                    <td>${vol.date}</td>
+                    <td>${vol.site}</td>
+                    <td>${vol.start_time}</td>
+                    <td>${vol.duration}</td>
+                    <td>${vol.distance_total.toFixed(1)}</td>
+                    <td>${vol.elevation_total.toFixed(1)}</td>
+                    <td>${vol.elevation_over_start.toFixed(1)}</td>
+                    <td>${vol.analyse}</td>
+                    <td>${vol.monitor}</td>
+                `;
+                tbody.appendChild(tr);
+            }); // End of data.forEach
+
+            // Create DataTables
+            flight_table = $('#flight_table').DataTable({
+                order: [[0, 'dec']],  // Order on first column, decrease
+                autoWidth: false,
+                columnDefs: [
+                    { targets: 8, width: '20%' },    // Analysis column
+                    { targets: '_all', width: '1%' } // Default
+                ],
+            });
         }   // End of update_table function
 
         // Add flight to book data and table
@@ -395,12 +400,20 @@
                 flight.monitor
             ];
             flight_table.row.add(newRow).draw();
+
+            update_charts(book_data);
         }   // End of add_flight_to_book function
+
+        function read_flight_book(data) {
+            book_data = data;  // Save book data to global variable
+            update_table(book_data);
+            update_charts(book_data);
+        }
 
         // Load flight book data from JSON file
         fetch('book.json')
             .then(response => response.json())
-            .then(data => update_table(data));
+            .then(data => read_flight_book(data));
 
         // Create file reader object
         var file_name = null;
@@ -464,9 +477,9 @@
             new_flight_data.site = document.getElementById('site_in').value;
             new_flight_data.start_time = document.getElementById('start_time_in').value;
             new_flight_data.duration = document.getElementById('duration_in').value;
-            new_flight_data.distance_total = parseFloat(document.getElementById('distance_total_in').value.toPrecision(4)) || 0;
+            new_flight_data.distance_total = parseFloat(document.getElementById('distance_total_in').value) || 0;
             new_flight_data.elevation_total = parseFloat(document.getElementById('elevation_total').value) || 0;
-            new_flight_data.elevation_start = parseFloat(document.getElementById('elevation_start').value) || 0;
+            new_flight_data.elevation_over_start = parseFloat(document.getElementById('elevation_over_start').value) || 0;
             new_flight_data.analyse = document.getElementById('analyse_in').value;
             new_flight_data.monitor = document.getElementById('monitor_in').value;
             new_flight_data.file_name = null;
