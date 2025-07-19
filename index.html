@@ -75,7 +75,7 @@
 
 <body>
     <div id="tile_line">
-        <h2 style="display: inline-block;">Flight book</h2>
+        <h1 style="display: inline-block; color: blue;">Olive's flight book</h1>
 
         <div>
             <div id="menu_button">
@@ -502,6 +502,16 @@
             a.download = 'vols-export.json';
             a.click();
             URL.revokeObjectURL(url);
+        });
+
+        // Event on DataTable search
+        $('#flight_table').DataTable().on('search.dt', () => {
+            // Update charts when search is performed
+            var filteredData = [];
+            $('#flight_table').DataTable().rows({ search: 'applied' }).indexes().map(index => {
+                filteredData[index] = book_data[index];
+            });
+            update_charts(filteredData);
         });
     </script>
 
