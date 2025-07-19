@@ -349,7 +349,7 @@
                 // Manage flight link if track file is available or not
                 var file_link = vol.nbr;
                 if (vol.file_name) {
-                    file_link = `<a href="http://01ive.free.fr/standalone/?file=http://01ive.free.fr/tracks_com/${vol.file_name}">${vol.nbr}<a>`;
+                    file_link = `<a href="http://01ive.free.fr/client/index.html?file=http://01ive.free.fr/tracks_gen/${vol.file_name}">${vol.nbr}<a>`;
                 }
                 
                 tr.innerHTML = `
@@ -385,7 +385,7 @@
             // Manage flight link if track file is available or not
             var file_link = flight.nbr;
             if (flight.file_name) {
-                file_link = `<a href="http://01ive.free.fr/standalone/?file=http://01ive.free.fr/tracks_com/${flight.file_name}">${flight.nbr}<a>`;
+                file_link = `<a href="http://01ive.free.fr/client/index.html?file=http://01ive.free.fr/tracks_gen/${flight.file_name}">${flight.nbr}<a>`;
             }
             const newRow = [
                 file_link,
@@ -427,7 +427,7 @@
             var new_flight_data = {};
             new_flight_data = active_flight.flight_info;
             new_flight_data.file_name = active_flight.file_name;
-            new_flight_data.nbr = book_data[0]['nbr']+1;
+            new_flight_data.nbr = book_data.length + 1;
 
             new_flight_data.site = "None";
             new_flight_data.monitor = "None";
