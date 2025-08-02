@@ -165,8 +165,10 @@
 
             data.forEach(vol => {
                 // Prepare dates and distances dict for chart usage
-                dates.push(vol.date);
-                distances.push((vol.distance_total / 1000).toFixed(2)); // en km
+                if(vol.distance_total) {
+                    dates.push(vol.date);
+                    distances.push((vol.distance_total / 1000).toFixed(2)); // en km
+                }
 
                 // Create short name for site
                 let site_short_name = "";
