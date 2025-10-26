@@ -16,18 +16,6 @@
             align-items: center;
             justify-content: space-between;
         }
-        #menu_button {
-            display: inline-block;
-            width: auto;
-            border-radius: 4px;
-            border: 1px solid rgba(0, 0, 0, 0.2);
-            background-color: rgba(0, 0, 0, 0.1);
-            font-size: 14px;
-            padding: 1px 5px;
-        }
-        #menu_button:hover {
-            background-color: lightgray;
-        }
         input[type="file"] {
             display: none;
         }
@@ -78,10 +66,12 @@
         <h1 style="display: inline-block; color: blue;">Olive's flight book</h1>
 
         <div>
-            <div id="menu_button">
+            <button id="go_to_client" onclick="window.open('http://01ive.free.fr/client/index.html')">✈ Track Analyser</button>
+
+            <button>
                 <label id="my-file-selector" for="file-selector">➕ Add track</label>
                 <input type="file" id="file-selector" accept=".igc, .gpx" placeholder="Select a file">
-            </div>
+            </button>
 
             <button id="manual_entry_button" type="submit">➕ Manual entry</button>
 
