@@ -496,7 +496,7 @@
             URL.revokeObjectURL(url);
         });
 
-        // Event on DataTable search
+        // Event on DataTable search only
         $('#flight_table').DataTable().on('search.dt', () => {
             // Update charts when search is performed
             var filteredData = [];
@@ -505,6 +505,108 @@
             });
             update_charts(filteredData);
         });
+
+        // Event on DataTable draw (pagination, search, sort)
+        $('#flight_table').on('draw.dt', () => {
+            highlightMax();
+        });
+
+        // Function to highlight max
+        function highlightMax() {
+            const durationColIndex = 4;             // Index of the "Duration" column
+            const distanceColIndex = 5;             // Index of the "Disatnce" column
+            const elevationGainsColIndex = 6;       // Index of the "Elevation gains" column
+            const elevationOverStartColIndex = 7;   // Index of the "Elevation over start" column
+
+            function durationToSeconds(duration) {
+                const [h, m, s] = duration.split(':').map(Number);
+                return h * 3600 + m * 60 + s;
+            }
+
+            var table = $('#flight_table').DataTable();
+
+            // Remove all highlights
+            $('#flight_table td').find('.max-search-icon, .max-global-icon').remove();
+
+            // Duration highlight
+            var searchDurations = table.column(durationColIndex, { search: 'applied' }).data().toArray();
+            var allDurations = table.column(durationColIndex, { search: 'none'}).data().toArray();
+
+            searchDurations = searchDurations.map(d => durationToSeconds(d))
+            allDurations = allDurations.map(d => durationToSeconds(d))
+
+            var searchMaxDuration = Math.max.apply(null, searchDurations);
+            var allMaxDuration = Math.max.apply(null, allDurations);
+
+            // Distance highlight
+            var searchDistances = table.column(distanceColIndex, { search: 'applied' }).data().toArray();
+            var allDistances = table.column(distanceColIndex, { search: 'none' }).data().toArray();
+
+            searchDistances = searchDistances.map(d => parseFloat(d));
+            allDistances = allDistances.map(d => parseFloat(d));
+
+            var searchMaxDistances = Math.max.apply(null, searchDistances); 
+            var allMaxDistances = Math.max.apply(null, allDistances);
+
+            // Elevation gains highlight
+            var searchElevationGains = table.column(elevationGainsColIndex, { search: 'applied' }).data().toArray();
+            var allElevationGains = table.column(elevationGainsColIndex, { search: 'none' }).data().toArray();
+
+            searchElevationGains = searchElevationGains.map(d => parseFloat(d));
+            allElevationGains = allElevationGains.map(d => parseFloat(d));
+
+            var searchMaxElevationGains = Math.max.apply(null, searchElevationGains);
+            var allMaxElevationGains = Math.max.apply(null, allElevationGains);
+
+            // Elevation over start highlight
+            var searchElevationOverStart = table.column(elevationOverStartColIndex, { search: 'applied' }).data().toArray();
+            var allElevationOverStart = table.column(elevationOverStartColIndex, { search: 'none' }).data().toArray();
+            
+            searchElevationOverStart = searchElevationOverStart.map(d => parseFloat(d));
+            allElevationOverStart = allElevationOverStart.map(d => parseFloat(d));
+            
+            var searchMaxElevationOverStart = Math.max.apply(null, searchElevationOverStart);
+            var allMaxElevationOverStart = Math.max.apply(null, allElevationOverStart);
+
+            // Add highlights to the cells
+            table.rows({ search: 'applied' }).every(function() {
+                var $cell = $(this.node()).find('td').eq(durationColIndex);
+                var value = $cell.text();
+                if (durationToSeconds(value) === searchMaxDuration) {
+                    $cell.append(' <span class="max-search-icon">🏆</span>');
+                }
+                if (durationToSeconds(value) === allMaxDuration) {
+                    $cell.append(' <span class="max-global-icon">🌍</span>');
+                }
+
+                $cell = $(this.node()).find('td').eq(distanceColIndex);
+                value = $cell.text();
+                if (parseFloat(value) === searchMaxDistances) {
+                    $cell.append(' <span class="max-search-icon">🏆</span>');
+                }
+                if (parseFloat(value) === allMaxDistances) {
+                    $cell.append(' <span class="max-global-icon">🌍</span>');
+                }
+
+                $cell = $(this.node()).find('td').eq(elevationGainsColIndex);
+                value = $cell.text();
+                if (parseFloat(value) === searchMaxElevationGains) {
+                    $cell.append(' <span class="max-search-icon">🏆</span>');
+                }
+                if (parseFloat(value) === allMaxElevationGains) {
+                    $cell.append(' <span class="max-global-icon">🌍</span>');
+                }
+
+                $cell = $(this.node()).find('td').eq(elevationOverStartColIndex);
+                value = $cell.text();
+                if (parseFloat(value) === searchMaxElevationOverStart) {
+                    $cell.append(' <span class="max-search-icon">🏆</span>');
+                }   
+                if (parseFloat(value) === allMaxElevationOverStart) {
+                    $cell.append(' <span class="max-global-icon">🌍</span>');
+                }
+            });
+        }
     </script>
 
 </body>
