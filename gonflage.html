@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tableau des vols</title>
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #tile_line {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        #my-file-selector {
+            display: block;
+            cursor: pointer;
+            /* background-color: white; */
+            height: 100%;
+            border-radius: 2px;
+        }
+        #manual_entry {
+            visibility: hidden; 
+            position: absolute;
+        }
+        table {
+            width: 100%;
+            font-size: 14px;
+        }
+        #graphs {
+            display: flex;
+            flex-direction: column;
+        }
+        #global_graphs {
+            display: flex;
+            max-height: 33vh;
+            flex-wrap: wrap;
+            align-items: stretch;
+            justify-content: space-around;
+        }
+        #nb_flight_chart {
+            max-width: 50%;
+        }
+        #nb_flight_solo {
+            max-width: 100%;
+        }
+        #nb_flight_per_site {
+            max-width: 25%;
+        }
+        #distance_chart {
+            max-height: 33vh;
+            max-width: 100vw;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="tile_line">
+        <h1 style="display: inline-block; color: blue;">Olive's flight book</h1>
+
+        <div>
+            <button id="go_to_client" onclick="window.open('http://01ive.free.fr/client/index.html')">✈ Track Analyser</button>
+
+            <button>
+                <label id="my-file-selector" for="file-selector">➕ Add track</label>
+                <input type="file" id="file-selector" accept=".igc, .gpx" placeholder="Select a file">
+            </button>
+
+            <button id="manual_entry_button" type="submit">➕ Manual entry</button>
+
+            <button id="save_button_json">💾 Save to file</button>
+        </div>
+    </div>
+
+    <div id="manual_entry">
+        <form id="addRowForm">
+            <input type="date"   id="date_in" required>
+            <input type="text"   id="site_in" placeholder="Site" required>
+            <input type="time"   id="start_time_in" placeholder="Start time" required>
+            <input type="time"   id="duration_in" placeholder="Duration" required step="1">
+            <input type="text"   id="analyse_in" placeholder="Analyse" required>
+            <button type="submit">Enter</button>
+        </form>
+    </div>
+
+    <table id="flight_table" class="display">
+        <thead>
+            <tr>
+                <th>Nbr</th>
+                <th>Date</th>
+                <th>Site</th>
+                <th>Start time</th>
+                <th>Duration</th>
+                <th>Analyse</th>
+            </tr>
+        </thead>
+        <tbody id="table_body"></tbody>
+    </table>
+
+    <div id="graphs">
+        <div id="global_graphs">
+            <!-- Chart.js container -->
+            <canvas id="nb_flight_chart"></canvas>
+
+            <!-- Chart.js container -->
+            <canvas id="nb_flight_solo"></canvas>
+
+            <!-- Chart.js container -->
+            <canvas id="nb_flight_per_site"></canvas>
+
+            <!-- Chart.js container -->
+            <canvas id="distance_chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="bundle.js"></script>
+
+    <script>
+        // Global variables
+        var book_data = [];       // Json data strucure
+        var flight_table = null;    // DataTable instance
+        
+
+        // Init manual entry form visibility
+        document.getElementById('manual_entry').style.visibility = 'hidden';
+
+        function update_charts(data) {
+            const dates = [], distances = [];
+
+            const flight_per_year = {}; // Flight grouped by year
+            const flight_per_site = {}; // Flight grouped by site
+
+            // Reinit charts (for refresh)
+            const all_charts = Chart.instances ? Object.values(Chart.instances) : [];
+            all_charts.forEach(chart => chart.destroy());
+
+            data.forEach(vol => {
+                // Prepare dates and distances dict for chart usage
+                if(vol.distance_total) {
+                    dates.push(vol.date);
+                    distances.push((vol.distance_total / 1000).toFixed(2)); // en km
+                }
+
+                // Create short name for site
+                let site_short_name = "";
+                let sites = vol.site.split(" ");    // Split site name using spaces
+                for (word in sites) {               // Loop on each word
+                    site_short_name += sites[word].toLowerCase();
+                    if (sites[word].length < 4) {   // If word is too short add a space and loop to next word else short name is done
+                        site_short_name += " ";
+                    } else {
+                        break;
+                    }
+                }
+                // Group flights per site
+                if (!flight_per_site[site_short_name]) {
+                    flight_per_site[site_short_name] = 0;
+                }
+                flight_per_site[site_short_name] += 1;
+
+                // Group data per year
+                const year = new Date(vol.date).getFullYear();
+                if (!flight_per_year[year]) {
+                    flight_per_year[year] = {
+                        nb: 0,
+                        total_in_minutes: 0,
+                        solo: 0
+                    };
+                }
+                // Add flight to counter
+                flight_per_year[year].nb += 1;
+                // Count solo flights
+                if (vol.monitor === 'None') {
+                    flight_per_year[year].solo += 1;
+                }
+                // Add duration in minutes for year
+                const [h, m, s] = vol.duration.split(':').map(Number);
+                flight_per_year[year].total_in_minutes += h * 60 + m + s / 60;
+            }); // End of data.forEach
+
+            // Prepare data for charts
+            const years = Object.keys(flight_per_year).sort();
+            const nbVols = years.map(a => flight_per_year[a].nb);
+            const tpsVols = years.map(a => flight_per_year[a].total_in_minutes / 60);
+
+            // Number of flights and flight time per year
+            new Chart(document.getElementById('nb_flight_chart'), {
+                type: 'bar',
+                data: {
+                    labels: years,
+                    datasets: [{
+                        label: 'Nombre de vols',
+                        data: nbVols,
+                        backgroundColor: '#4caf50',
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Temps de vol (h)',
+                        data: tpsVols,
+                        backgroundColor: '#2196f3',
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Nombre de vols'
+                            }
+                        },
+                        y1: {
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Temps de vol (h)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            }); // End of nb_flight_chart
+
+            // Flight per site chart
+            let flight_per_siteName = Object.entries(flight_per_site).map(a => a[0]);
+            let flight_per_siteValues = Object.entries(flight_per_site).map(a => a[1]);
+            new Chart(document.getElementById('nb_flight_per_site'), {
+                type: 'pie',
+                data: {
+                    labels: flight_per_siteName,
+                    datasets: [{
+                        label: 'Sites de vols',
+                        data: flight_per_siteValues
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                        title: {
+                            display: true,
+                            text: 'Sites'
+                        }
+                    }
+                }
+            }); // End of nb_flight_per_site
+        }
+
+        // update_table
+        function update_table(data) {
+            const tbody = document.getElementById('table_body');
+
+            // Reinit table data (for refresh)
+            tbody.innerHTML = '';
+            $('#flight_table').DataTable().clear().destroy();
+
+            data.forEach(vol => {
+                const tr = document.createElement('tr');
+                
+                tr.innerHTML = `
+                    <td>${vol.nbr}</td>
+                    <td>${vol.date}</td>
+                    <td>${vol.site}</td>
+                    <td>${vol.start_time}</td>
+                    <td>${vol.duration}</td>
+                    <td>${vol.analyse}</td>
+                `;
+                tbody.appendChild(tr);
+            }); // End of data.forEach
+
+            // Create DataTables
+            flight_table = $('#flight_table').DataTable({
+                order: [[0, 'dec']],  // Order on first column, decrease
+                autoWidth: false,
+                columnDefs: [
+                    { targets: 5, width: '20%' },    // Analysis column
+                    { targets: '_all', width: '1%' } // Default
+                ],
+            });
+        }   // End of update_table function
+
+        // Add flight to book data and table
+        function add_flight_to_book(flight) {
+            flight.nbr = (book_data.length + 1).toString();
+            book_data.unshift(flight);
+            // Manage flight link if track file is available or not
+            const newRow = [
+                flight.nbr,
+                flight.date,
+                flight.site,
+                flight.start_time,
+                flight.duration,
+                flight.analyse
+            ];
+            flight_table.row.add(newRow).draw();
+
+            update_charts(book_data);
+        }   // End of add_flight_to_book function
+
+        function read_flight_book(data) {
+            book_data = data;  // Save book data to global variable
+            update_table(book_data);
+            update_charts(book_data);
+        }
+
+        // Load flight book data from JSON file
+        fetch('ground.json')
+            .then(response => response.json())
+            .then(data => read_flight_book(data)).catch(read_flight_book([]));
+
+        // Create file reader object
+        var file_name = null;
+        const file_reader = new FileReader();
+        file_reader.addEventListener('load', (event) => {
+            let flight = new Flight("flight");
+            flight.load_file(event.target.result, file_name);
+            active_flight = flight;
+            active_flight.process_flight_info();
+
+            var new_flight_data = {};
+            new_flight_data = active_flight.flight_info;
+            new_flight_data.file_name = active_flight.file_name;
+            new_flight_data.nbr = book_data.length + 1;
+
+            new_flight_data.site = "None";
+            new_flight_data.monitor = "None";
+            let comments = active_flight.comment.split('\n');
+
+            for(line in comments) {
+                if (comments[line].search("site:") >= 0) {
+                    new_flight_data.site = comments[line].replace("site:", "").trim();
+                }
+                if (comments[line].search("monitor:") >= 0) {
+                    new_flight_data.monitor = comments[line].replace("monitor:", "").trim();
+                }
+            }
+            comments = comments.join('\n');
+            new_flight_data.analyse = comments.replace(/site:.*\n?/, '').replace(/monitor:.*\n?/, '').trim();
+
+            add_flight_to_book(new_flight_data);
+        });
+
+        // Event on load file button
+        const file_selector = document.getElementById('file-selector');
+        file_selector.addEventListener('change', (event) => {
+            const file_list = event.target.files;
+            file_name = file_list[0].name;	// Get only the file name
+            file_reader.readAsText(file_list[0]);
+        });
+
+        // Envent on manual_entry_button
+        document.getElementById('manual_entry_button').addEventListener('click', function () {
+            const manual_entry = document.getElementById('manual_entry');
+            if (manual_entry.style.visibility === 'hidden') {
+                manual_entry.style.visibility = 'visible';
+                manual_entry.style.position = 'static';
+            } else {
+                manual_entry.style.visibility = 'hidden';
+                manual_entry.style.position = 'absolute';
+            }
+        });
+
+        // Event on addRowForm submit button
+        document.getElementById('addRowForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            new_flight_data = {};
+
+            new_flight_data.date = document.getElementById('date_in').value;
+            new_flight_data.site = document.getElementById('site_in').value;
+            new_flight_data.start_time = document.getElementById('start_time_in').value;
+            new_flight_data.duration = document.getElementById('duration_in').value;
+            new_flight_data.analyse = document.getElementById('analyse_in').value;
+            
+            add_flight_to_book(new_flight_data);
+
+            this.reset();
+
+            const manual_entry = document.getElementById('manual_entry');
+            manual_entry.style.visibility = 'hidden';
+            manual_entry.style.position = 'absolute';
+        });
+
+        // Event on save_button_json
+        document.getElementById('save_button_json').addEventListener('click', function () {
+            const blob = new Blob([JSON.stringify(book_data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'vols-export.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Event on DataTable search only
+        $('#flight_table').DataTable().on('search.dt', () => {
+            // Update charts when search is performed
+            var filteredData = [];
+            $('#flight_table').DataTable().rows({ search: 'applied' }).indexes().map(index => {
+                filteredData[index] = book_data[index];
+            });
+            update_charts(filteredData);
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,178 @@
+[
+  {
+    "nbr": 22,
+    "date": "2025-03-07",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "01:00:00",
+    "analyse": "Gonflage vent Sud Est bof. Entrainement dos voile sans vent."
+  },
+  {
+    "nbr": 21,
+    "date": "2025-02-15",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "01:00:00",
+    "analyse": "Gonflage avant ski et suite révision. Vent moyen Nord Est sur herbe gymnase"
+  },
+  {
+    "nbr": 20,
+    "date": "2024-06-10",
+    "site": "Engolneuf",
+    "start_time": "11:00",
+    "duration": "01:00:00",
+    "analyse": "Gonflage école Thang Kha, vent fort, pas de dos voile, arrachage."
+  },
+  {
+    "nbr": 19,
+    "date": "2024-03-22",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "01:00:00",
+    "analyse": "Gonflage 15-25 km/h vent très raffaleux et tournant. Test du cockpit au gonflage RAS. Test cokpit + appli sur portik."
+  },
+  {
+    "nbr": 18,
+    "date": "2024-03-16",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "01:00:00",
+    "analyse": "Gonflage 10-25 km/h vent tournant. Exercice accroche face voile et deco sans vent face voile"
+  },
+  {
+    "nbr": 17,
+    "date": "2024-02-01",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "00:45:00",
+    "analyse": "None"
+  },
+  {
+    "nbr": 16,
+    "date": "2023-02-15",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "01:00:00",
+    "analyse": "Gonflage 1 heure 4-10km/h de vent peu rafaleux mesures à toussu. Exercices dos voile, entrainement avec gants de ski, tempo en chasse d'eau puis pilotage avec demi tour de frein. Pré gonflage sans vent possible mais accompagner progressivement la redescente de la voile."
+  },
+  {
+    "nbr": 15,
+    "date": "2022-12-27",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "01:00:00",
+    "analyse": "Gonflage 1 heure 18km/h - 29 en rafale mesures à toussu.Exercices pilotage aux driss de freins. Pilotage dos voile en aveugle."
+  },
+  {
+    "nbr": 14,
+    "date": "2022-10-29",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "01:00:00",
+    "analyse": "Gonflage 1 heure 18km/h - 32 en rafales mesures à toussu. Exercice face voile, droite gauche stabilot. Pilotage aux driss de freins. Oreilles. Contrôle voile dos voile. Super!"
+  },
+  {
+    "nbr": 13,
+    "date": "2022-10-15",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "01:00:00",
+    "analyse": "sans vent 1 heure. Dos voile, gonflage, contrôle, deco."
+  },
+  {
+    "nbr": 12,
+    "date": "2022-09-30",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "01:00:00",
+    "analyse": "Gonflage 1 heure 15km/h - 30 en rafale mesuré. Face voile (peu de dos voile trop fort). Exercice de monté avec control aux arrières. Affalement d'urgence. Maintien de la voile."
+  },
+  {
+    "nbr": 11,
+    "date": "2022-03-20",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "01:00:00",
+    "analyse": "Cernay peu de vent et rafaleux. Test des a coups face voile."
+  },
+  {
+    "nbr": 10,
+    "date": "2022-02-12",
+    "site": "Beynes",
+    "start_time": "11:00",
+    "duration": "01:30:00",
+    "analyse": "Beynes gonflage dos et face voile 15-20km/h annoncé. Vent plustot faible. Ok pour dos voile."
+  },
+  {
+    "nbr": 9,
+    "date": "2021-10-09",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "01:00:00",
+    "analyse": "Pas de commentaire"
+  },
+  {
+    "nbr": 8,
+    "date": "2021-08-10",
+    "site": "La gazelle",
+    "start_time": "11:00",
+    "duration": "00:45:00",
+    "analyse": "Valentine Sud Ouest, vent 10/15km/h faiblissant."
+  },
+  {
+    "nbr": 7,
+    "date": "2021-08-05",
+    "site": "La gazelle",
+    "start_time": "11:00",
+    "duration": "00:45:00",
+    "analyse": "Au dessus de la Gazelle Tour d'élévateur, pas de gonflage, problème avec les vaches"
+  },
+  {
+    "nbr": 6,
+    "date": "2021-08-01",
+    "site": "La gazelle",
+    "start_time": "11:00",
+    "duration": "00:30:00",
+    "analyse": "Vent 5-10km/h au dessus de la Gazelle, pas assé de vent"
+  },
+  {
+    "nbr": 5,
+    "date": "2021-04-23",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "00:30:00",
+    "analyse": "Trop de vent un deco face voile trop fort en raffale (11km/h et 25km/h raffale mesuré à Auffargis)"
+  },
+  {
+    "nbr": 4,
+    "date": "2021-04-21",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "00:45:00",
+    "analyse": "Pas de vent et directions très changeante 6km/h et 18km/h raffale mesuré à Auffargis"
+  },
+  {
+    "nbr": 3,
+    "date": "2021-04-13",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "01:00:00",
+    "analyse": "Vent 0-10 km/h raffale fortes 19km/h orientation Nord et Est (premiers gonflages cobra non complet)"
+  },
+  {
+    "nbr": 2,
+    "date": "2021-04-08",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "01:00:00",
+    "analyse": "Très peu de vent -4 km/h / annoncé 10km/h"
+  },
+  {
+    "nbr": 1,
+    "date": "2021-03-29",
+    "site": "Cernay",
+    "start_time": "11:00",
+    "duration": "01:00:00",
+    "analyse": "Très peu de vent -5km/h / annoncé 10km/h (quelques gonflage dos / face voile) "
+  }
+]
