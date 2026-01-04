@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Stats - Events</title>
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #tile_line {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        #my-file-selector {
+            display: block;
+            cursor: pointer;
+            height: 100%;
+            border-radius: 2px;
+        }
+        #manual_entry {
+            visibility: hidden; 
+            position: absolute;
+        }
+        table {
+            width: 100%;
+            font-size: 14px;
+        }
+        #graphs {
+            display: flex;
+            flex-direction: column;
+        }
+        #global_graphs {
+            display: flex;
+            max-height: 33vh;
+            flex-wrap: wrap;
+            align-items: stretch;
+            justify-content: space-around;
+        }
+        #nb_flight_chart {
+            max-width: 50%;
+        }
+        #nb_flight_solo {
+            max-width: 100%;
+        }
+        #distance_chart {
+            max-height: 33vh;
+            max-width: 100vw;
+        }
+
+
+    .tabs {
+        display: flex;
+        border-bottom: 2px solid #ccc;
+        background: #f7f7f7;
+        padding: 8px;
+    }
+
+    .tab {
+        padding: 1px 20px;
+        margin-right: 10px;
+        text-decoration: none;
+        color: #333;
+        border: 1px solid #ccc;
+        border-bottom: none;
+        border-radius: 6px 6px 0 0;
+        background: white;
+    }
+
+    /* Onglet actif, basé sur une classe */
+    .tab.active {
+        font-weight: bold;
+        color: blue;
+        background: #e9e9e9;
+        border-bottom: 2px solid white;
+    }
+
+    .tab:hover {
+        background: #eee;
+    }
+    </style>
+</head>
+
+<body>
+    <div class="tabs">
+        <a href="index.html" class="tab">🪂 Flight</a>
+        <a href="ground.html" class="tab">🌬 Ground Handling</a>
+        <a href="http://01ive.free.fr/client/index.html" class="tab">✈ Track Analyser</a>
+        <a href="stats.html" class="tab active">📉 Stats</a>
+        <div style="display: float; right; margin-left: auto;">
+            <button id="manual_entry_button" type="submit">➕ Manual entry</button>
+            <button id="save_button_json">💾 Save to file</button>
+        </div>
+    </div>
+
+    <div id="manual_entry">
+        <form id="addRowForm">
+            <input type="date"   id="date_in" required>
+            <select id="event_type_in" required>
+                <option value="" disabled selected>Choose event type</option>
+                <option value="Control">Control</option>
+                <option value="Reserve repack">Reserve repack</option>
+                <option value="Purchase">Purchase</option>
+                <!-- Cleaning option removed per request -->
+            </select>
+            <textarea id="comments_in" placeholder="Comments" rows="3" style="width:100%"></textarea>
+            <button type="submit">Enter</button>
+        </form>
+    </div>
+    <p></p>
+    <table id="stats_table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Event type</th>
+                <th>Comments</th>
+            </tr>
+        </thead>
+        <tbody id="table_body"></tbody>
+    </table>
+
+    <div id="graphs">
+        <div id="global_graphs">            
+            <!-- Manatane chart: hours since last event per category -->
+            <canvas id="manatane_chart" style="max-width:45%;"></canvas>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="bundle.js"></script>
+
+    <script>
+        // Global variables
+        var book_data = [];       // Json data structure
+        var stats_table = null;    // DataTable instance
+
+        // Init manual entry form visibility
+        document.getElementById('manual_entry').style.visibility = 'hidden';
+
+        function update_charts(data) {
+            // Build distribution of event types
+            const event_count = {};
+            data.forEach(e => {
+                const t = e.event_type || 'Unknown';
+                event_count[t] = (event_count[t] || 0) + 1;
+            });
+
+            // Destroy previous charts
+            const all_charts = Chart.instances ? Object.values(Chart.instances) : [];
+            all_charts.forEach(chart => chart.destroy());
+
+            // (Pie chart removed) Event type distribution chart intentionally omitted.
+
+            // ---- Manatane chart: for each event category, show flight hours and ground hours
+            (function computeAndDrawManatane() {
+                // Prepare processed events: for Purchase items, append first word of comments
+                const processedEvents = (data || []).map(e => {
+                    const ev = Object.assign({}, e);
+                    if (ev.event_type && ev.event_type.toString().trim().toLowerCase().startsWith('purchase')) {
+                        const comments = (ev.comments || '').toString().trim();
+                        if (comments.length > 0) {
+                            const firstWord = comments.split(/\s+/)[0];
+                            if (firstWord) {
+                                ev.event_type = 'Purchase ' + firstWord;
+                            } else {
+                                ev.event_type = 'Purchase';
+                            }
+                        } else {
+                            ev.event_type = 'Purchase';
+                        }
+                    }
+                    return ev;
+                });
+
+                // Build categories: keep Control and Reserve repack, and expand Purchase variants
+                const baseCategories = ['Control', 'Reserve repack'];
+                const purchaseVariants = Array.from(new Set(processedEvents
+                    .filter(ev => ev.event_type && ev.event_type.toString().startsWith('Purchase'))
+                    .map(ev => ev.event_type)));
+                // If no purchase variants found but original data had bare 'Purchase', include 'Purchase'
+                const hadBarePurchase = (data || []).some(ev => ev.event_type && ev.event_type.toString().trim().toLowerCase() === 'purchase');
+                const categories = baseCategories.concat(purchaseVariants.length ? purchaseVariants : (hadBarePurchase ? ['Purchase'] : []));
+
+                // Find last date per category from the processed events
+                const lastDatePerCategory = {};
+                categories.forEach(cat => {
+                    const dates = processedEvents
+                        .filter(e => e.event_type === cat && e.date)
+                        .map(e => new Date(e.date));
+                    if (dates.length === 0) {
+                        lastDatePerCategory[cat] = null;
+                    } else {
+                        lastDatePerCategory[cat] = new Date(Math.max.apply(null, dates));
+                    }
+                });
+
+                // Helper to parse duration strings like "HH:MM:SS" into hours (float)
+                function durationToHours(d) {
+                    if (!d) return 0;
+                    const parts = String(d).split(':').map(Number);
+                    if (parts.length === 3) {
+                        return parts[0] + parts[1] / 60 + parts[2] / 3600;
+                    } else if (parts.length === 2) {
+                        return parts[0] + parts[1] / 60;
+                    }
+                    return parseFloat(d) || 0;
+                }
+
+                // Load book.json and ground.json and compute totals since each category last date
+                Promise.all([
+                    fetch('book.json').then(r => r.json()).catch(() => []),
+                    fetch('ground.json').then(r => r.json()).catch(() => [])
+                ]).then(([bookData, groundData]) => {
+                    const flightHours = [];
+                    const groundHours = [];
+
+                    categories.forEach(cat => {
+                        const lastDate = lastDatePerCategory[cat];
+                        if (!lastDate) {
+                            // If no event of this category exists, show 0
+                            flightHours.push(0);
+                            groundHours.push(0);
+                            return;
+                        }
+
+                        // Sum flight hours from book.json with date >= lastDate
+                        let fh = 0;
+                        (bookData || []).forEach(b => {
+                            try {
+                                if (b.date && new Date(b.date) >= lastDate) {
+                                    fh += durationToHours(b.duration);
+                                }
+                            } catch (e) { }
+                        });
+
+                        // Sum ground hours from ground.json with date >= lastDate
+                        let gh = 0;
+                        (groundData || []).forEach(g => {
+                            try {
+                                if (g.date && new Date(g.date) >= lastDate) {
+                                    gh += durationToHours(g.duration);
+                                }
+                            } catch (e) { }
+                        });
+
+                        // Round to 2 decimals
+                        flightHours.push(Math.round(fh * 100) / 100);
+                        groundHours.push(Math.round(gh * 100) / 100);
+                    });
+
+                    // Create grouped bar chart
+                    new Chart(document.getElementById('manatane_chart'), {
+                        type: 'bar',
+                        data: {
+                            labels: categories,
+                            datasets: [
+                                {
+                                    label: 'Flight hours since last event',
+                                    backgroundColor: '#4caf50',
+                                    data: flightHours
+                                },
+                                {
+                                    label: 'Ground hours since last event',
+                                    backgroundColor: '#2196f3',
+                                    data: groundHours
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: { stacked: true },
+                                y: {
+                                    stacked: true,
+                                    beginAtZero: true,
+                                    title: { display: true, text: 'Hours' }
+                                }
+                            },
+                            plugins: {
+                                legend: { position: 'top' }
+                            }
+                        }
+                    });
+                }).catch(err => {
+                    console.error('Error loading book/ground json for manatane chart', err);
+                });
+            })();
+        }
+
+        // update_table
+        function update_table(data) {
+            const tbody = document.getElementById('table_body');
+
+            // Reinit table data (for refresh)
+            tbody.innerHTML = '';
+            if ($.fn.dataTable.isDataTable('#stats_table')) {
+                $('#stats_table').DataTable().clear().destroy();
+            }
+
+            data.forEach(ev => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `\n                    <td>${ev.date}</td>\n                    <td>${ev.event_type}</td>\n                    <td>${ev.comments || ''}</td>\n                `;
+                tbody.appendChild(tr);
+            });
+
+            // Create DataTables
+            stats_table = $('#stats_table').DataTable({
+                order: [[0, 'desc']],
+                autoWidth: false,
+                columnDefs: [
+                    { targets: 2, width: '50%' },
+                    { targets: '_all', width: '1%' }
+                ],
+            });
+        }
+
+        // Add event to book data and table
+        function add_event_to_book(event) {
+            // Use string nbr for compatibility if needed
+            event.nbr = (book_data.length + 1).toString();
+            book_data.unshift(event);
+            const newRow = [
+                event.date,
+                event.event_type,
+                event.comments || ''
+            ];
+            stats_table.row.add(newRow).draw();
+
+            update_charts(book_data);
+        }
+
+        function read_flight_book(data) {
+            book_data = data || [];
+            update_table(book_data);
+            update_charts(book_data);
+        }
+
+        // Load stats data from JSON file
+        fetch('stats.json')
+            .then(response => response.json())
+            .then(data => read_flight_book(data))
+            .catch(() => read_flight_book([]));
+
+        // Envent on manual_entry_button
+        document.getElementById('manual_entry_button').addEventListener('click', function () {
+            const manual_entry = document.getElementById('manual_entry');
+            if (manual_entry.style.visibility === 'hidden') {
+                manual_entry.style.visibility = 'visible';
+                manual_entry.style.position = 'static';
+            } else {
+                manual_entry.style.visibility = 'hidden';
+                manual_entry.style.position = 'absolute';
+            }
+        });
+
+        // Event on addRowForm submit button
+        document.getElementById('addRowForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            new_event = {};
+
+            new_event.date = document.getElementById('date_in').value;
+            new_event.event_type = document.getElementById('event_type_in').value;
+            new_event.comments = document.getElementById('comments_in').value;
+
+            add_event_to_book(new_event);
+
+            this.reset();
+
+            const manual_entry = document.getElementById('manual_entry');
+            manual_entry.style.visibility = 'hidden';
+            manual_entry.style.position = 'absolute';
+        });
+
+        // Event on save_button_json
+        document.getElementById('save_button_json').addEventListener('click', function () {
+            const blob = new Blob([JSON.stringify(book_data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'stats-export.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Event on DataTable search only -> update charts to show filtered data
+        $(document).on('init.dt', '#stats_table', function () {
+            $('#stats_table').DataTable().on('search.dt', () => {
+                var filteredData = [];
+                $('#stats_table').DataTable().rows({ search: 'applied' }).indexes().map(index => {
+                    // DataTables reorders rows; map by row index into DOM
+                    const rowData = $('#stats_table').DataTable().row(index).data();
+                    if (rowData) {
+                        filteredData.push({ date: rowData[0], event_type: rowData[1], comments: rowData[2] });
+                    }
+                });
+                update_charts(filteredData);
+            });
+        });
+    </script>
+
+</body>
+
+</html>

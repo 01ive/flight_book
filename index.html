@@ -58,18 +58,49 @@
             max-height: 33vh;
             max-width: 100vw;
         }
+
+
+    .tabs {
+        display: flex;
+        border-bottom: 2px solid #ccc;
+        background: #f7f7f7;
+        padding: 8px;
+    }
+
+    .tab {
+        padding: 1px 20px;
+        margin-right: 10px;
+        text-decoration: none;
+        color: #333;
+        border: 1px solid #ccc;
+        border-bottom: none;
+        border-radius: 6px 6px 0 0;
+        background: white;
+    }
+
+    /* Onglet actif, basé sur une classe */
+    .tab.active {
+        font-weight: bold;
+        color: blue;
+        background: #e9e9e9;
+        border-bottom: 2px solid white;
+    }
+
+    .tab:hover {
+        background: #eee;
+    }
     </style>
 </head>
 
 <body>
-    <div id="tile_line">
-        <h1 style="display: inline-block; color: blue;">Olive's flight book</h1>
-
-        <div>
-            <button id="go_to_client" onclick="window.open('http://01ive.free.fr/client/index.html')">✈ Track Analyser</button>
-
+    <div class="tabs">
+        <a href="index.html" class="tab active">🪂 Flight</a>
+        <a href="ground.html" class="tab">🌬 Ground Handling</a>
+        <a href="http://01ive.free.fr/client/index.html" class="tab">✈ Track Analyser</a>
+        <a href="stats.html" class="tab">📉 Stats</a>
+        <div style="display: float; right; margin-left: auto;">
             <button>
-                <label id="my-file-selector" for="file-selector">➕ Add track</label>
+                <label id="my-file-selector" for="file-selector">📎 Add track</label>
                 <input type="file" id="file-selector" accept=".igc, .gpx" placeholder="Select a file">
             </button>
 
@@ -93,7 +124,7 @@
             <button type="submit">Enter</button>
         </form>
     </div>
-
+    <p></p>
     <table id="flight_table" class="display">
         <thead>
             <tr>
