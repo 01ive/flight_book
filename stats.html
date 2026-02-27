@@ -110,6 +110,7 @@
                 <option value="Purchase">Purchase</option>
                 <!-- Cleaning option removed per request -->
             </select>
+            <input type="text" id="name_in" placeholder="Optional name for Purchase (used in legend)" style="width:100%; margin-top:6px;" />
             <textarea id="comments_in" placeholder="Comments" rows="3" style="width:100%"></textarea>
             <button type="submit">Enter</button>
         </form>
@@ -120,6 +121,7 @@
             <tr>
                 <th>Date</th>
                 <th>Event type</th>
+                <th>Name</th>
                 <th>Comments</th>
             </tr>
         </thead>
@@ -163,33 +165,48 @@
 
             // ---- Manatane chart: for each event category, show flight hours and ground hours
             (function computeAndDrawManatane() {
-                // Prepare processed events: for Purchase items, append first word of comments
+                // Prepare processed events: for Purchase and Control items, prefer `name` field, else use first word of comments
                 const processedEvents = (data || []).map(e => {
                     const ev = Object.assign({}, e);
-                    if (ev.event_type && ev.event_type.toString().trim().toLowerCase().startsWith('purchase')) {
-                        const comments = (ev.comments || '').toString().trim();
-                        if (comments.length > 0) {
-                            const firstWord = comments.split(/\s+/)[0];
-                            if (firstWord) {
-                                ev.event_type = 'Purchase ' + firstWord;
+                    const t = (ev.event_type || '').toString().trim().toLowerCase();
+                    const nameField = (ev.name || '').toString().trim();
+                    if (t.startsWith('purchase')) {
+                        if (nameField.length > 0) {
+                            ev.event_type = 'Purchase ' + nameField;
+                        } else {
+                            const comments = (ev.comments || '').toString().trim();
+                            if (comments.length > 0) {
+                                const firstWord = comments.split(/\s+/)[0];
+                                ev.event_type = firstWord ? 'Purchase ' + firstWord : 'Purchase';
                             } else {
                                 ev.event_type = 'Purchase';
                             }
+                        }
+                    } else if (t.startsWith('control')) {
+                        if (nameField.length > 0) {
+                            ev.event_type = 'Control ' + nameField;
                         } else {
-                            ev.event_type = 'Purchase';
+                            ev.event_type = 'Control';
                         }
                     }
                     return ev;
                 });
 
-                // Build categories: keep Control and Reserve repack, and expand Purchase variants
-                const baseCategories = ['Control', 'Reserve repack'];
+                // Build categories: include Control variants and Purchase variants, plus Reserve repack
+                const controlVariants = Array.from(new Set(processedEvents
+                    .filter(ev => ev.event_type && ev.event_type.toString().startsWith('Control '))
+                    .map(ev => ev.event_type)));
                 const purchaseVariants = Array.from(new Set(processedEvents
                     .filter(ev => ev.event_type && ev.event_type.toString().startsWith('Purchase'))
                     .map(ev => ev.event_type)));
-                // If no purchase variants found but original data had bare 'Purchase', include 'Purchase'
+                const hadBareControl = (data || []).some(ev => ev.event_type && ev.event_type.toString().trim().toLowerCase() === 'control');
                 const hadBarePurchase = (data || []).some(ev => ev.event_type && ev.event_type.toString().trim().toLowerCase() === 'purchase');
-                const categories = baseCategories.concat(purchaseVariants.length ? purchaseVariants : (hadBarePurchase ? ['Purchase'] : []));
+
+                const categories = [].concat(
+                    controlVariants.length ? controlVariants : (hadBareControl ? ['Control'] : []),
+                    ['Reserve repack'],
+                    purchaseVariants.length ? purchaseVariants : (hadBarePurchase ? ['Purchase'] : [])
+                );
 
                 // Find last date per category from the processed events
                 const lastDatePerCategory = {};
@@ -197,11 +214,7 @@
                     const dates = processedEvents
                         .filter(e => e.event_type === cat && e.date)
                         .map(e => new Date(e.date));
-                    if (dates.length === 0) {
-                        lastDatePerCategory[cat] = null;
-                    } else {
-                        lastDatePerCategory[cat] = new Date(Math.max.apply(null, dates));
-                    }
+                    lastDatePerCategory[cat] = dates.length ? new Date(Math.max.apply(null, dates)) : null;
                 });
 
                 // Helper to parse duration strings like "HH:MM:SS" into hours (float)
@@ -216,7 +229,7 @@
                     return parseFloat(d) || 0;
                 }
 
-                // Load book.json and ground.json and compute totals since each category last date
+                // Load book.json and ground.json and compute totals per category
                 Promise.all([
                     fetch('book.json').then(r => r.json()).catch(() => []),
                     fetch('ground.json').then(r => r.json()).catch(() => [])
@@ -224,36 +237,55 @@
                     const flightHours = [];
                     const groundHours = [];
 
+                    // Precompute normalized gliderType values
+                    function normalizeName(s) { if (!s && s !== 0) return ''; return String(s).replace(/_/g, ' ').trim().toLowerCase(); }
+                    const gliderTypesSet = new Set();
+                    (bookData || []).forEach(b => { if (b.gliderType) gliderTypesSet.add(normalizeName(b.gliderType)); });
+                    (groundData || []).forEach(g => { if (g.gliderType) gliderTypesSet.add(normalizeName(g.gliderType)); });
+
                     categories.forEach(cat => {
+                        let fh = 0, gh = 0;
                         const lastDate = lastDatePerCategory[cat];
+
                         if (!lastDate) {
-                            // If no event of this category exists, show 0
-                            flightHours.push(0);
-                            groundHours.push(0);
-                            return;
+                            flightHours.push(0); groundHours.push(0); return;
                         }
 
-                        // Sum flight hours from book.json with date >= lastDate
-                        let fh = 0;
-                        (bookData || []).forEach(b => {
-                            try {
-                                if (b.date && new Date(b.date) >= lastDate) {
-                                    fh += durationToHours(b.duration);
+                        if (cat.startsWith('Control ')) {
+                            // Control with name: only count flights/ground since lastDate AND matching gliderType
+                            const nameNorm = normalizeName(cat.replace(/^Control\s+/, ''));
+                            const matched = Array.from(gliderTypesSet).some(gt => gt === nameNorm);
+                            if (matched) {
+                                (bookData || []).forEach(b => { try { if (b.date && new Date(b.date) >= lastDate && b.gliderType && normalizeName(b.gliderType) === nameNorm) fh += durationToHours(b.duration); } catch (e) {} });
+                                (groundData || []).forEach(g => { try { if (g.date && new Date(g.date) >= lastDate && g.gliderType && normalizeName(g.gliderType) === nameNorm) gh += durationToHours(g.duration); } catch (e) {} });
+                            } else {
+                                // If no matching gliderType, show 0
+                                fh = 0; gh = 0;
+                            }
+                        } else if (cat === 'Control') {
+                            // Bare Control: sum since lastDate for all gliderTypes
+                            (bookData || []).forEach(b => { try { if (b.date && new Date(b.date) >= lastDate) fh += durationToHours(b.duration); } catch (e) {} });
+                            (groundData || []).forEach(g => { try { if (g.date && new Date(g.date) >= lastDate) gh += durationToHours(g.duration); } catch (e) {} });
+                        } else if (cat.startsWith('Purchase ')) {
+                            // Purchase variants: try to match by gliderType name (no date threshold)
+                            const nameNorm = normalizeName(cat.replace(/^Purchase\s+/, ''));
+                            const matched = Array.from(gliderTypesSet).some(gt => gt === nameNorm);
+                            if (matched) {
+                                (bookData || []).forEach(b => { try { if (b.gliderType && normalizeName(b.gliderType) === nameNorm) fh += durationToHours(b.duration); } catch (e) {} });
+                                (groundData || []).forEach(g => { try { if (g.gliderType && normalizeName(g.gliderType) === nameNorm) gh += durationToHours(g.duration); } catch (e) {} });
+                            } else {
+                                // fallback: sum since purchase date
+                                if (lastDate) {
+                                    (bookData || []).forEach(b => { try { if (b.date && new Date(b.date) >= lastDate) fh += durationToHours(b.duration); } catch (e) {} });
+                                    (groundData || []).forEach(g => { try { if (g.date && new Date(g.date) >= lastDate) gh += durationToHours(g.duration); } catch (e) {} });
                                 }
-                            } catch (e) { }
-                        });
+                            }
+                        } else if (cat === 'Reserve repack') {
+                            // Reserve repack: sum since lastDate
+                            (bookData || []).forEach(b => { try { if (b.date && new Date(b.date) >= lastDate) fh += durationToHours(b.duration); } catch (e) {} });
+                            (groundData || []).forEach(g => { try { if (g.date && new Date(g.date) >= lastDate) gh += durationToHours(g.duration); } catch (e) {} });
+                        }
 
-                        // Sum ground hours from ground.json with date >= lastDate
-                        let gh = 0;
-                        (groundData || []).forEach(g => {
-                            try {
-                                if (g.date && new Date(g.date) >= lastDate) {
-                                    gh += durationToHours(g.duration);
-                                }
-                            } catch (e) { }
-                        });
-
-                        // Round to 2 decimals
                         flightHours.push(Math.round(fh * 100) / 100);
                         groundHours.push(Math.round(gh * 100) / 100);
                     });
@@ -309,7 +341,7 @@
 
             data.forEach(ev => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `\n                    <td>${ev.date}</td>\n                    <td>${ev.event_type}</td>\n                    <td>${ev.comments || ''}</td>\n                `;
+                tr.innerHTML = `\n                    <td>${ev.date}</td>\n                    <td>${ev.event_type}</td>\n                    <td>${ev.name || ''}</td>\n                    <td>${ev.comments || ''}</td>\n                `;
                 tbody.appendChild(tr);
             });
 
@@ -318,7 +350,7 @@
                 order: [[0, 'desc']],
                 autoWidth: false,
                 columnDefs: [
-                    { targets: 2, width: '50%' },
+                    { targets: 3, width: '50%' },
                     { targets: '_all', width: '1%' }
                 ],
             });
@@ -332,6 +364,7 @@
             const newRow = [
                 event.date,
                 event.event_type,
+                event.name || '',
                 event.comments || ''
             ];
             stats_table.row.add(newRow).draw();
@@ -371,6 +404,7 @@
 
             new_event.date = document.getElementById('date_in').value;
             new_event.event_type = document.getElementById('event_type_in').value;
+            new_event.name = document.getElementById('name_in').value;
             new_event.comments = document.getElementById('comments_in').value;
 
             add_event_to_book(new_event);
@@ -401,7 +435,7 @@
                     // DataTables reorders rows; map by row index into DOM
                     const rowData = $('#stats_table').DataTable().row(index).data();
                     if (rowData) {
-                        filteredData.push({ date: rowData[0], event_type: rowData[1], comments: rowData[2] });
+                        filteredData.push({ date: rowData[0], event_type: rowData[1], name: rowData[2], comments: rowData[3] });
                     }
                 });
                 update_charts(filteredData);
