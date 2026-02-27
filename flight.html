@@ -58,7 +58,19 @@
         <a href="stats.html" class="tab">📉 Stats</a>
     </div>
 
-    <iframe id="content-frame" src="http://01ive.free.fr/client/index.html"></iframe>
+    <iframe id="content-frame"></iframe>
+
+    <script>
+        // Get URL parameters and pass them to the iframe
+        const params = new URLSearchParams(window.location.search);
+        const fileParam = params.get('file');
+        
+        const iframeUrl = fileParam 
+            ? `http://01ive.free.fr/client/index.html?file=${encodeURIComponent(fileParam)}`
+            : 'http://01ive.free.fr/client/index.html';
+        
+        document.getElementById('content-frame').src = iframeUrl;
+    </script>
 </body>
 
 </html>

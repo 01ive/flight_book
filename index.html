@@ -372,7 +372,7 @@
                 // Manage flight link if track file is available or not
                 var file_link = vol.nbr;
                 if (vol.file_name) {
-                    file_link = `<a href="http://01ive.free.fr/client/index.html?file=http://01ive.free.fr/tracks_gen/${vol.file_name}">${vol.nbr}<a>`;
+                    file_link = `<a href="flight.html?file=http://01ive.free.fr/tracks_gen/${vol.file_name}">${vol.nbr}<a>`;
                 }
                 
                 tr.innerHTML = `
@@ -408,7 +408,7 @@
             // Manage flight link if track file is available or not
             var file_link = flight.nbr;
             if (flight.file_name) {
-                file_link = `<a href="http://01ive.free.fr/client/index.html?file=http://01ive.free.fr/tracks_gen/${flight.file_name}">${flight.nbr}<a>`;
+                file_link = `<a href="flight.html?file=http://01ive.free.fr/tracks_gen/${flight.file_name}">${flight.nbr}<a>`;
             }
             const newRow = [
                 file_link,
