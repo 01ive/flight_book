@@ -121,7 +121,7 @@
             <tr>
                 <th>Date</th>
                 <th>Event type</th>
-                <th>Name</th>
+                <th>Glider</th>
                 <th>Comments</th>
             </tr>
         </thead>
@@ -169,10 +169,10 @@
                 const processedEvents = (data || []).map(e => {
                     const ev = Object.assign({}, e);
                     const t = (ev.event_type || '').toString().trim().toLowerCase();
-                    const nameField = (ev.name || '').toString().trim();
+                    const gliderTypeField = (ev.gliderType || '').toString().trim();
                     if (t.startsWith('purchase')) {
-                        if (nameField.length > 0) {
-                            ev.event_type = 'Purchase ' + nameField;
+                        if (gliderTypeField.length > 0) {
+                            ev.event_type = 'Purchase ' + gliderTypeField;
                         } else {
                             const comments = (ev.comments || '').toString().trim();
                             if (comments.length > 0) {
@@ -183,8 +183,8 @@
                             }
                         }
                     } else if (t.startsWith('control')) {
-                        if (nameField.length > 0) {
-                            ev.event_type = 'Control ' + nameField;
+                        if (gliderTypeField.length > 0) {
+                            ev.event_type = 'Control ' + gliderTypeField;
                         } else {
                             ev.event_type = 'Control';
                         }
@@ -341,7 +341,7 @@
 
             data.forEach(ev => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `\n                    <td>${ev.date}</td>\n                    <td>${ev.event_type}</td>\n                    <td>${ev.name || ''}</td>\n                    <td>${ev.comments || ''}</td>\n                `;
+                tr.innerHTML = `\n                    <td>${ev.date}</td>\n                    <td>${ev.event_type}</td>\n                    <td>${ev.gliderType || ''}</td>\n                    <td>${ev.comments || ''}</td>\n                `;
                 tbody.appendChild(tr);
             });
 
@@ -364,7 +364,7 @@
             const newRow = [
                 event.date,
                 event.event_type,
-                event.name || '',
+                event.gliderType || '',
                 event.comments || ''
             ];
             stats_table.row.add(newRow).draw();
@@ -404,7 +404,7 @@
 
             new_event.date = document.getElementById('date_in').value;
             new_event.event_type = document.getElementById('event_type_in').value;
-            new_event.name = document.getElementById('name_in').value;
+            new_event.gliderType = document.getElementById('gliderType_in').value;
             new_event.comments = document.getElementById('comments_in').value;
 
             add_event_to_book(new_event);

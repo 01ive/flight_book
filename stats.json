@@ -2,7 +2,7 @@
   {
     "date": "2026-01-30",
     "event_type": "Purchase",
-    "name": "Hiko_P",
+    "gliderType": "Hiko_P",
     "comments": "Hiko_P",
     "nbr": "7"
   },
@@ -21,14 +21,14 @@
   {
     "date": "2024-11-06",
     "event_type": "Control",
-    "name": "Koyot_4",
+    "gliderType": "Koyot_4",
     "comments": "Koyot_4. Freedom.",
     "nbr": "6"
   },
   {
     "date": "2023-01-07",
     "event_type": "Control",
-    "name": "Koyot_4",
+    "gliderType": "Koyot_4",
     "comments": "Koyot_4.",
     "nbr": "5"
   },
@@ -42,7 +42,7 @@
     "date": "2020-08-21",
     "event_type": "Purchase",
     "comments": "Koyot_4 achetée d’occasion pour 2350€. Elle avait 3 vols.",
-    "name": "Koyot_4",
+    "gliderType": "Koyot_4",
     "nbr": "3"
   }
 ]
