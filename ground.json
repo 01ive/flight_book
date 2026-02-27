@@ -6,7 +6,7 @@
     "duration": "01:00:00",
     "analyse": "Pas de vent. Travaille dos voile avec prise des commandes en poignées",
     "nbr": "24",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "date": "2026-01-11",
@@ -15,7 +15,7 @@
     "duration": "00:20:00",
     "analyse": "18 - 34en raffale. Donc raffale trop fortes. Démélage et pliage de la voile.",
     "nbr": "23",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 22,
@@ -24,7 +24,7 @@
     "start_time": "11:00",
     "duration": "01:00:00",
     "analyse": "Gonflage vent Sud Est bof. Entrainement dos voile sans vent.",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 21,
@@ -33,7 +33,7 @@
     "start_time": "11:00",
     "duration": "01:00:00",
     "analyse": "Gonflage avant ski et suite révision. Vent moyen Nord Est sur herbe gymnase",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 20,
@@ -42,7 +42,7 @@
     "start_time": "11:00",
     "duration": "01:00:00",
     "analyse": "Gonflage école Thang Kha, vent fort, pas de dos voile, arrachage.",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 19,
@@ -51,7 +51,7 @@
     "start_time": "11:00",
     "duration": "01:00:00",
     "analyse": "Gonflage 15-25 km/h vent très raffaleux et tournant. Test du cockpit au gonflage RAS. Test cokpit + appli sur portik.",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 18,
@@ -60,7 +60,7 @@
     "start_time": "11:00",
     "duration": "01:00:00",
     "analyse": "Gonflage 10-25 km/h vent tournant. Exercice accroche face voile et deco sans vent face voile",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 17,
@@ -69,7 +69,7 @@
     "start_time": "11:00",
     "duration": "00:45:00",
     "analyse": "None",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 16,
@@ -78,7 +78,7 @@
     "start_time": "11:00",
     "duration": "01:00:00",
     "analyse": "Gonflage 1 heure 4-10km/h de vent peu rafaleux mesures à toussu. Exercices dos voile, entrainement avec gants de ski, tempo en chasse d'eau puis pilotage avec demi tour de frein. Pré gonflage sans vent possible mais accompagner progressivement la redescente de la voile.",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 15,
@@ -87,7 +87,7 @@
     "start_time": "11:00",
     "duration": "01:00:00",
     "analyse": "Gonflage 1 heure 18km/h - 29 en rafale mesures à toussu.Exercices pilotage aux driss de freins. Pilotage dos voile en aveugle.",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 14,
@@ -96,7 +96,7 @@
     "start_time": "11:00",
     "duration": "01:00:00",
     "analyse": "Gonflage 1 heure 18km/h - 32 en rafales mesures à toussu. Exercice face voile, droite gauche stabilot. Pilotage aux driss de freins. Oreilles. Contrôle voile dos voile. Super!",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 13,
@@ -105,7 +105,7 @@
     "start_time": "11:00",
     "duration": "01:00:00",
     "analyse": "sans vent 1 heure. Dos voile, gonflage, contrôle, deco.",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 12,
@@ -114,7 +114,7 @@
     "start_time": "11:00",
     "duration": "01:00:00",
     "analyse": "Gonflage 1 heure 15km/h - 30 en rafale mesuré. Face voile (peu de dos voile trop fort). Exercice de monté avec control aux arrières. Affalement d'urgence. Maintien de la voile.",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 11,
@@ -123,7 +123,7 @@
     "start_time": "11:00",
     "duration": "01:00:00",
     "analyse": "Cernay peu de vent et rafaleux. Test des a coups face voile.",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 10,
@@ -132,7 +132,7 @@
     "start_time": "11:00",
     "duration": "01:30:00",
     "analyse": "Beynes gonflage dos et face voile 15-20km/h annoncé. Vent plustot faible. Ok pour dos voile.",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 9,
@@ -141,7 +141,7 @@
     "start_time": "11:00",
     "duration": "01:00:00",
     "analyse": "Pas de commentaire",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 8,
@@ -150,7 +150,7 @@
     "start_time": "11:00",
     "duration": "00:45:00",
     "analyse": "Valentine Sud Ouest, vent 10/15km/h faiblissant.",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 7,
@@ -159,7 +159,7 @@
     "start_time": "11:00",
     "duration": "00:45:00",
     "analyse": "Au dessus de la Gazelle Tour d'élévateur, pas de gonflage, problème avec les vaches",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 6,
@@ -168,7 +168,7 @@
     "start_time": "11:00",
     "duration": "00:30:00",
     "analyse": "Vent 5-10km/h au dessus de la Gazelle, pas assé de vent",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 5,
@@ -177,7 +177,7 @@
     "start_time": "11:00",
     "duration": "00:30:00",
     "analyse": "Trop de vent un deco face voile trop fort en raffale (11km/h et 25km/h raffale mesuré à Auffargis)",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 4,
@@ -186,7 +186,7 @@
     "start_time": "11:00",
     "duration": "00:45:00",
     "analyse": "Pas de vent et directions très changeante 6km/h et 18km/h raffale mesuré à Auffargis",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 3,
@@ -195,7 +195,7 @@
     "start_time": "11:00",
     "duration": "01:00:00",
     "analyse": "Vent 0-10 km/h raffale fortes 19km/h orientation Nord et Est (premiers gonflages cobra non complet)",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 2,
@@ -204,7 +204,7 @@
     "start_time": "11:00",
     "duration": "01:00:00",
     "analyse": "Très peu de vent -4 km/h / annoncé 10km/h",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   },
   {
     "nbr": 1,
@@ -213,6 +213,6 @@
     "start_time": "11:00",
     "duration": "01:00:00",
     "analyse": "Très peu de vent -5km/h / annoncé 10km/h (quelques gonflage dos / face voile) ",
-    "glider": "Koyot_4"
+    "gliderType": "Koyot_4"
   }
 ]
