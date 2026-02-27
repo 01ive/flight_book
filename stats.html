@@ -242,6 +242,7 @@
                     const gliderTypesSet = new Set();
                     (bookData || []).forEach(b => { if (b.gliderType) gliderTypesSet.add(normalizeName(b.gliderType)); });
                     (groundData || []).forEach(g => { if (g.gliderType) gliderTypesSet.add(normalizeName(g.gliderType)); });
+                    (data || []).forEach(s => { if (s.gliderType) gliderTypesSet.add(normalizeName(s.gliderType)); });
 
                     categories.forEach(cat => {
                         let fh = 0, gh = 0;
@@ -267,18 +268,21 @@
                             (bookData || []).forEach(b => { try { if (b.date && new Date(b.date) >= lastDate) fh += durationToHours(b.duration); } catch (e) {} });
                             (groundData || []).forEach(g => { try { if (g.date && new Date(g.date) >= lastDate) gh += durationToHours(g.duration); } catch (e) {} });
                         } else if (cat.startsWith('Purchase ')) {
-                            // Purchase variants: try to match by gliderType name (no date threshold)
+                            // Purchase variants (with gliderType): only count if gliderType matches. No fallback: if no match, show 0
                             const nameNorm = normalizeName(cat.replace(/^Purchase\s+/, ''));
                             const matched = Array.from(gliderTypesSet).some(gt => gt === nameNorm);
                             if (matched) {
                                 (bookData || []).forEach(b => { try { if (b.gliderType && normalizeName(b.gliderType) === nameNorm) fh += durationToHours(b.duration); } catch (e) {} });
                                 (groundData || []).forEach(g => { try { if (g.gliderType && normalizeName(g.gliderType) === nameNorm) gh += durationToHours(g.duration); } catch (e) {} });
                             } else {
-                                // fallback: sum since purchase date
-                                if (lastDate) {
-                                    (bookData || []).forEach(b => { try { if (b.date && new Date(b.date) >= lastDate) fh += durationToHours(b.duration); } catch (e) {} });
-                                    (groundData || []).forEach(g => { try { if (g.date && new Date(g.date) >= lastDate) gh += durationToHours(g.duration); } catch (e) {} });
-                                }
+                                (bookData || []).forEach(b => { try { if (b.date && new Date(b.date) >= lastDate) fh += durationToHours(b.duration); } catch (e) {} });
+                                (groundData || []).forEach(g => { try { if (g.date && new Date(g.date) >= lastDate) gh += durationToHours(g.duration); } catch (e) {} });
+                            }
+                        } else if (cat === 'Purchase') {
+                            // Bare Purchase (no gliderType): use purchase date as fallback
+                            if (lastDate) {
+                                (bookData || []).forEach(b => { try { if (b.date && new Date(b.date) >= lastDate) fh += durationToHours(b.duration); } catch (e) {} });
+                                (groundData || []).forEach(g => { try { if (g.date && new Date(g.date) >= lastDate) gh += durationToHours(g.duration); } catch (e) {} });
                             }
                         } else if (cat === 'Reserve repack') {
                             // Reserve repack: sum since lastDate
