@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Track Analyser</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #ccc;
+            background: #f7f7f7;
+            padding: 8px;
+            margin: 0;
+        }
+
+        .tab {
+            padding: 1px 20px;
+            margin-right: 10px;
+            text-decoration: none;
+            color: #333;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            background: white;
+        }
+
+        .tab.active {
+            font-weight: bold;
+            color: blue;
+            background: #e9e9e9;
+            border-bottom: 2px solid white;
+        }
+
+        .tab:hover {
+            background: #eee;
+        }
+
+        #content-frame {
+            width: 100%;
+            height: calc(100vh - 60px);
+            border: none;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="tabs">
+        <a href="index.html" class="tab">🪂 Flight</a>
+        <a href="ground.html" class="tab">🌬 Ground Handling</a>
+        <a href="flight.html" class="tab active">✈ Track Analyser</a>
+        <a href="stats.html" class="tab">📉 Stats</a>
+    </div>
+
+    <iframe id="content-frame" src="http://01ive.free.fr/client/index.html"></iframe>
+</body>
+
+</html>
