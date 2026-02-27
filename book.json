@@ -145,7 +145,7 @@
     "analyse": "Petit vol de fin de matinée. Pas d'utilisation des thermiques pourtant présent. Exercices de pilotage 360 ok.\n_"
   },
   {
-    "gliderType": "NIVIUK Koyot 4",
+    "gliderType": "Koyot 4",
     "pilot": "Olive",
     "date": "2025-08-23",
     "loggerType": "samsung SM-A366B 15",
@@ -1133,7 +1133,7 @@
   {
     "file_name": "2024-10-18-XFH-000-02.IGC",
     "nbr": 131,
-    "gliderType": "Niviuk Koyot 4",
+    "gliderType": "Koyot 4",
     "pilot": "Olive",
     "date": "2024-10-18",
     "loggerType": "Flyskyhy,8.2.4",
@@ -1162,7 +1162,7 @@
   {
     "file_name": "2024-10-18-XFH-000-01.IGC",
     "nbr": 130,
-    "gliderType": "Niviuk Koyot 4",
+    "gliderType": "Koyot 4",
     "pilot": "Olive",
     "date": "2024-10-18",
     "loggerType": "Flyskyhy,8.2.4",
@@ -1191,7 +1191,7 @@
   {
     "file_name": "2024-10-17-XFH-000-03.IGC",
     "nbr": 129,
-    "gliderType": "Niviuk Koyot 4",
+    "gliderType": "Koyot 4",
     "pilot": "Olive",
     "date": "2024-10-17",
     "loggerType": "Flyskyhy,8.2.4",
@@ -1220,7 +1220,7 @@
   {
     "file_name": "2024-10-17-XFH-000-02.IGC",
     "nbr": 128,
-    "gliderType": "Niviuk Koyot 4",
+    "gliderType": "Koyot 4",
     "pilot": "Olive",
     "date": "2024-10-17",
     "loggerType": "Flyskyhy,8.2.4",
@@ -1249,7 +1249,7 @@
   {
     "file_name": "2024-10-17-XFH-000-01.IGC",
     "nbr": 127,
-    "gliderType": "Niviuk Koyot 4",
+    "gliderType": "Koyot 4",
     "pilot": "Olive",
     "date": "2024-10-17",
     "loggerType": "Flyskyhy,8.2.4",
@@ -2873,7 +2873,7 @@
   {
     "file_name": "2023-02-25-XSD-ULT-01.igc",
     "nbr": 71,
-    "gliderType": "paraglider",
+    "gliderType": "Koyot 4",
     "pilot": "Olive",
     "date": "2023-02-25",
     "loggerType": "STODEUS,ULTRABIP",
@@ -2902,7 +2902,7 @@
   {
     "file_name": "2022-11-02-XSD-ULT-02.igc",
     "nbr": 70,
-    "gliderType": "paraglider",
+    "gliderType": "Koyot 4",
     "pilot": "",
     "date": "2022-11-02",
     "loggerType": "STODEUS,ULTRABIP",
