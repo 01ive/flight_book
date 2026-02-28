@@ -106,6 +106,8 @@
 
             <button id="manual_entry_button" type="submit">➕ Manual entry</button>
 
+            <button id="view_selected_button">👁️ View flights</button>
+
             <button id="save_button_json">💾 Save to file</button>
         </div>
     </div>
@@ -128,6 +130,7 @@
     <table id="flight_table" class="display">
         <thead>
             <tr>
+                <th></th>
                 <th>Nbr</th>
                 <th>Date</th>
                 <th>Site</th>
@@ -375,7 +378,13 @@
                     file_link = `<a href="flight.html?file=http://01ive.free.fr/tracks_gen/${vol.file_name}">${vol.nbr}<a>`;
                 }
                 
+                // First column: checkbox to select flight for viewing in Track Analyser
+                const checkboxHTML = vol.file_name ?
+                    `<input type="checkbox" class="flight-select" data-file="${vol.file_name}">` :
+                    `<input type="checkbox" class="flight-select" disabled>`;
+
                 tr.innerHTML = `
+                    <td>${checkboxHTML}</td>
                     <td>${file_link}</td>
                     <td>${vol.date}</td>
                     <td>${vol.site}</td>
@@ -392,10 +401,10 @@
 
             // Create DataTables
             flight_table = $('#flight_table').DataTable({
-                order: [[0, 'dec']],  // Order on first column, decrease
+                order: [[1, 'dec']],  // Order on Nbr column (was shifted by checkbox)
                 autoWidth: false,
                 columnDefs: [
-                    { targets: 8, width: '20%' },    // Analysis column
+                    { targets: 9, width: '20%' },    // Analysis column (shifted)
                     { targets: '_all', width: '1%' } // Default
                 ],
             });
@@ -410,7 +419,12 @@
             if (flight.file_name) {
                 file_link = `<a href="flight.html?file=http://01ive.free.fr/tracks_gen/${flight.file_name}">${flight.nbr}<a>`;
             }
+            const checkboxHtml = flight.file_name ?
+                `<input type="checkbox" class="flight-select" data-file="${flight.file_name}">` :
+                `<input type="checkbox" class="flight-select" disabled>`;
+
             const newRow = [
+                checkboxHtml,
                 file_link,
                 flight.date,
                 flight.site,
@@ -527,6 +541,19 @@
             URL.revokeObjectURL(url);
         });
 
+        // Event on View selected flights button
+        document.getElementById('view_selected_button').addEventListener('click', function () {
+            const checked = Array.from(document.querySelectorAll('.flight-select:checked')).map(el => el.dataset.file).filter(Boolean);
+            if (checked.length === 0) {
+                alert('No flights selected');
+                return;
+            }
+            const urls = checked.map(f => 'http://01ive.free.fr/tracks_gen/' + f);
+            // const param = encodeURIComponent(urls.join(','));
+            const param = urls.join(',');
+            window.location.assign('flight.html?files=' + param, '_blank');
+        });
+
         // Event on DataTable search only
         $('#flight_table').DataTable().on('search.dt', () => {
             // Update charts when search is performed
@@ -542,12 +569,12 @@
             highlightMax();
         });
 
-        // Function to highlight max
-        function highlightMax() {
-            const durationColIndex = 4;             // Index of the "Duration" column
-            const distanceColIndex = 5;             // Index of the "Disatnce" column
-            const elevationGainsColIndex = 6;       // Index of the "Elevation gains" column
-            const elevationOverStartColIndex = 7;   // Index of the "Elevation over start" column
+            // Function to highlight max
+            function highlightMax() {
+            const durationColIndex = 5;             // Index of the "Duration" column (shifted by checkbox)
+            const distanceColIndex = 6;             // Index of the "Distance" column (shifted)
+            const elevationGainsColIndex = 7;       // Index of the "Elevation gains" column (shifted)
+            const elevationOverStartColIndex = 8;   // Index of the "Elevation over start" column (shifted)
 
             function durationToSeconds(duration) {
                 const [h, m, s] = duration.split(':').map(Number);

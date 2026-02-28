@@ -62,12 +62,8 @@
 
     <script>
         // Get URL parameters and pass them to the iframe
-        const params = new URLSearchParams(window.location.search);
-        const fileParam = params.get('file');
-        
-        const iframeUrl = fileParam 
-            ? `http://01ive.free.fr/client/index.html?file=${encodeURIComponent(fileParam)}`
-            : 'http://01ive.free.fr/client/index.html';
+        const iframeUrl = `http://01ive.free.fr/client/index.html${window.location.search}`;
+        console.log('Loading iframe with URL:', iframeUrl);
         
         document.getElementById('content-frame').src = iframeUrl;
     </script>
