@@ -130,7 +130,7 @@
     <table id="flight_table" class="display">
         <thead>
             <tr>
-                <th></th>
+                <th><input type="checkbox" id="select_all_filtered" title="Sélectionner tous les vols affichés"></th>
                 <th>Nbr</th>
                 <th>Date</th>
                 <th>Site</th>
@@ -404,6 +404,7 @@
                 order: [[1, 'dec']],  // Order on Nbr column (was shifted by checkbox)
                 autoWidth: false,
                 columnDefs: [
+                    { targets: 0, orderable: false },    // Disable sorting on checkbox column
                     { targets: 9, width: '20%' },    // Analysis column (shifted)
                     { targets: '_all', width: '1%' } // Default
                 ],
@@ -562,11 +563,13 @@
                 filteredData[index] = book_data[index];
             });
             update_charts(filteredData);
+            updateSelectAllCheckbox();
         });
 
         // Event on DataTable draw (pagination, search, sort)
         $('#flight_table').on('draw.dt', () => {
             highlightMax();
+            updateSelectAllCheckbox();
         });
 
             // Function to highlight max
@@ -665,6 +668,40 @@
                 }
             });
         }
+
+        // --- Select-all (filtered) helpers ---
+        function updateSelectAllCheckbox() {
+            try {
+                const table = $('#flight_table').DataTable();
+                if (!table) return;
+                const nodes = table.rows({ search: 'applied' }).nodes();
+                const $checkboxes = $(nodes).find('.flight-select:enabled');
+                const total = $checkboxes.length;
+                const checked = $checkboxes.filter(':checked').length;
+                const $header = $('#select_all_filtered');
+                if ($header.length === 0) return;
+                if (total === 0) {
+                    $header.prop('checked', false);
+                    $header.prop('indeterminate', false);
+                    return;
+                }
+                $header.prop('checked', checked === total);
+                $header.prop('indeterminate', checked > 0 && checked < total);
+            } catch (e) {
+                // ignore if table not ready
+            }
+        }
+
+        $(document).on('change', '#select_all_filtered', function() {
+            const table = $('#flight_table').DataTable();
+            if (!table) return;
+            const nodes = table.rows({ search: 'applied' }).nodes();
+            $(nodes).find('.flight-select:enabled').prop('checked', this.checked);
+        });
+
+        $(document).on('change', '.flight-select', function() {
+            updateSelectAllCheckbox();
+        });
     </script>
 
 </body>
