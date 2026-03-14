@@ -1,5 +1,14 @@
 [
   {
+    "date": "2026-03-10",
+    "site": "Cernay",
+    "start_time": "17:00",
+    "duration": "01:00:00",
+    "analyse": "Premier gonflage Hiko P, 18/30 km/h sud ouest. Attention aux suspentes très fines et aux clefs. La voile gonfle bien et n'est pas violente. Elle stop bien au dessus de la tete. Pilotage dos voile très facile. La voile plonge dans les trous d'air. Elle répond bien aux commandes. Essais de pilotage aux arrières à travailler mais semble efficace. ",
+    "gliderType": "Hiko_P",
+    "nbr": "25"
+  },
+  {
     "date": "2026-02-08",
     "site": "Cernay",
     "start_time": "16:00",

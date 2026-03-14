@@ -332,7 +332,7 @@
                 flight.nbr,
                 flight.date,
                 flight.site,
-                flight.glider || flight.gliderType || '',
+                flight.gliderType,
                 flight.start_time,
                 flight.duration,
                 flight.analyse
@@ -369,7 +369,7 @@
 
             new_flight_data.site = "None";
             new_flight_data.monitor = "None";
-            new_flight_data.glider = active_flight.flight_info.gliderType || '';
+            new_flight_data.gliderType = "None";
             let comments = active_flight.comment.split('\n');
 
             for(line in comments) {
@@ -409,7 +409,7 @@
             new_flight_data.start_time = document.getElementById('start_time_in').value;
             new_flight_data.duration = document.getElementById('duration_in').value;
             new_flight_data.analyse = document.getElementById('analyse_in').value;
-            new_flight_data.glider = document.getElementById('glider_in').value;
+            new_flight_data.gliderType = document.getElementById('glider_in').value;
             
             add_flight_to_book(new_flight_data);
 
