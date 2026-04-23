@@ -566,7 +566,7 @@
         });
 
         // Event on addRowForm submit button
-        document.getElementById('addRowForm').addEventListener('submit', function (e) {
+        document.getElementById('addRowForm').addEventListener('submit', async function (e) {
             e.preventDefault();
 
             new_flight_data = {};
@@ -589,6 +589,19 @@
             const manual_entry = document.getElementById('manual_entry');
             manual_entry.style.visibility = 'hidden';
             manual_entry.style.position = 'absolute';
+
+            // 2. Envoyer les données à Supabase
+            const { data, error } = await supabaseClient
+                .from('flights')
+                .insert([new_flight_data])
+                .select(); // On demande à récupérer la ligne créée (avec son ID et son Nbr)
+
+            if (error) {
+                alert("Erreur lors de l'enregistrement : " + error.message);
+                console.error("Détails de l'erreur :", error);
+            } else {
+                console.log("Vol enregistré avec succès !", data);
+            }
         });
 
         // Event on save_button_json
