@@ -6,6 +6,7 @@
     <title>Tableau des vols</title>
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -169,6 +170,41 @@
     <script src="bundle.js"></script>
 
     <script>
+
+        // Initialisation de Supabase
+        const supabaseUrl = 'https://ggoscybduasqnhilwdtq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdnb3NjeWJkdWFzcW5oaWx3ZHRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDg4OTQsImV4cCI6MjA5MjE4NDg5NH0.sp9pZE9JELgIQExreEoIewu1Zh6VWKxYdt4s87UblR8'; // Utilise ta clé complète ici
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+
+        // Fonction pour charger les données depuis Supabase
+        async function loadFlightsFromSupabase() {
+            const { data, error } = await supabaseClient
+                .from('flights') // Nom de ta table sur Supabase
+                .select('*')
+                .order('date', { ascending: false }); // Optionnel : trier par date
+
+            if (error) {
+                console.error('Erreur lors du chargement des vols:', error);
+                return;
+            }
+
+            if (data) {
+                console.log('Données reçues de Supabase:', data);
+                read_flight_book(data); // On réutilise ta fonction existante
+            }
+        }
+
+        // Appeler la fonction au chargement de la page
+        loadFlightsFromSupabase();
+
+
+
+
+
+
+
+
         // Global variables
         var book_data = null;       // Json data strucure
         var flight_table = null;    // DataTable instance
@@ -448,10 +484,18 @@
             update_charts(book_data);
         }
 
+        /* Supabase
+        https://ggoscybduasqnhilwdtq.supabase.co
+        eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdnb3NjeWJkdWFzcW5oaWx3ZHRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDg4OTQsImV4cCI6MjA5MjE4NDg5NH0.sp9pZE9JELgIQExreEoIewu1Zh6VWKxYdt4s87UblR8
+
+        sb_publishable_-dyOk0s-yGhoGKAzCOPyQw_AGUcXDi9
+
+        https://ggoscybduasqnhilwdtq.supabase.co/flights
+        */
         // Load flight book data from JSON file
-        fetch('book.json')
-            .then(response => response.json())
-            .then(data => read_flight_book(data));
+        // fetch('book.json')
+        //     .then(response => response.json())
+        //     .then(data => read_flight_book(data));
 
         // Create file reader object
         var file_name = null;
