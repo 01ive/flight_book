@@ -464,7 +464,7 @@
         }   // End of update_table function
 
         // Add flight to book data and table
-        function add_flight_to_book(flight) {
+        async function add_flight_to_book(flight) {
             flight.nbr = book_data.length + 1;
             book_data.unshift(flight);
             // Manage flight link if track file is available or not
@@ -492,6 +492,19 @@
             flight_table.row.add(newRow).draw();
 
             update_charts(book_data);
+
+            // 2. Envoyer les données à Supabase 
+            const { data, error } = await supabaseClient
+                .from('flights')
+                .insert([flight])
+                .select(); // On demande à récupérer la ligne créée (avec son ID et son Nbr)
+
+            if (error) {
+                alert("Erreur lors de l'enregistrement : " + error.message);
+                console.error("Détails de l'erreur :", error);
+            } else {
+                console.log("Vol enregistré avec succès !", data);
+            }
         }   // End of add_flight_to_book function
 
         function read_flight_book(data) {
@@ -566,7 +579,7 @@
         });
 
         // Event on addRowForm submit button
-        document.getElementById('addRowForm').addEventListener('submit', async function (e) {
+        document.getElementById('addRowForm').addEventListener('submit', function (e) {
             e.preventDefault();
 
             new_flight_data = {};
@@ -589,19 +602,6 @@
             const manual_entry = document.getElementById('manual_entry');
             manual_entry.style.visibility = 'hidden';
             manual_entry.style.position = 'absolute';
-
-            // 2. Envoyer les données à Supabase
-            const { data, error } = await supabaseClient
-                .from('flights')
-                .insert([new_flight_data])
-                .select(); // On demande à récupérer la ligne créée (avec son ID et son Nbr)
-
-            if (error) {
-                alert("Erreur lors de l'enregistrement : " + error.message);
-                console.error("Détails de l'erreur :", error);
-            } else {
-                console.log("Vol enregistré avec succès !", data);
-            }
         });
 
         // Event on save_button_json
