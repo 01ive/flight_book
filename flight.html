@@ -72,11 +72,8 @@
         // Event listener from the iframe to receive data
         window.addEventListener('message', function(event) {
             if (event.data.type === 'IGC_READY') {
-                const IgcText = event.data.payload;
+                const IgcBlob = event.data.payload;
                 const flight = event.data.metadata;
-                
-                // C'est ici, au dernier moment, qu'on crée le Blob pour l'upload
-                const IgcBlob = new Blob([IgcText], { type: 'text/plain' });
 
                 // On appelle ici la fonction Supabase que nous avons vue
                 saveTrackToSupabase(IgcBlob, flight);
