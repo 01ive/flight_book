@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>Track Analyser</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
     <style>
         body {
             margin: 0;
@@ -64,8 +65,6 @@
     <script>
         // Get URL parameters and pass them to the iframe
         const iframeUrl = `https://01ive.github.io/igc_trace_analyser/index.html${window.location.search}`;
-        // const iframeUrl = `../client/index.html${window.location.search}`;
-        console.log('Loading iframe with URL:', iframeUrl);
         
         document.getElementById('content-frame').src = iframeUrl;
 
@@ -75,88 +74,9 @@
                 const IgcBlob = event.data.payload;
                 const flight = event.data.metadata;
 
-                // On appelle ici la fonction Supabase que nous avons vue
                 saveTrackToSupabase(IgcBlob, flight);
             }
         });
-
-        // Initialisation de Supabase
-        const supabaseUrl = 'https://ggoscybduasqnhilwdtq.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdnb3NjeWJkdWFzcW5oaWx3ZHRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDg4OTQsImV4cCI6MjA5MjE4NDg5NH0.sp9pZE9JELgIQExreEoIewu1Zh6VWKxYdt4s87UblR8'; // Utilise ta clé complète ici
-        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-        const supabaseStorageTracksName = 'tracks';
-
-        async function getNextFlightNumber() {
-            const { count, error } = await supabaseClient
-                .from('flights')
-                .select('*', { count: 'exact', head: true });
-
-            if (error) {
-                console.error("Erreur lors de la récupération du compte :", error);
-                return null;
-            }
-
-            console.log("Nombre total de vols :", count);
-            
-            // Pour ton prochain vol, le numéro sera :
-            return count + 1;
-        }
-
-        async function saveTrackToSupabase(fileBlob, active_flight) {
-            try {
-                console.log("1. Upload du fichier vers le Storage...");
-                
-                // const fileName = active_flight.file_name;
-                const fileName = "toto.igc";
-
-                // --- ÉTAPE 2 : Upload vers Supabase Storage ---
-                const { data: storageData, error: storageError } = await supabaseClient
-                    .storage
-                    .from('tracks')
-                    .upload(fileName, fileBlob, {
-                        upsert: true // 'upsert: true' permet d'écraser si le fichier existe déjà
-                    });
-
-                if (storageError) throw storageError;
-
-                console.log("2. Upload réussi. Enregistrement en base de données...");
-
-                active_flight.nbr = await getNextFlightNumber();
-                
-                active_flight.site = "None";
-                active_flight.monitor = "None";
-                let comments = active_flight.comment.split('\n');
-
-                for(line in comments) {
-                    if (comments[line].search("site:") >= 0) {
-                        active_flight.site = comments[line].replace("site:", "").trim();
-                    }
-                    if (comments[line].search("monitor:") >= 0) {
-                        active_flight.monitor = comments[line].replace("monitor:", "").trim();
-                    }
-                }
-                comments = comments.join('\n');
-                active_flight.analyse = comments.replace(/site:.*\n?/, '').replace(/monitor:.*\n?/, '').trim();
-                delete active_flight.comment;
-
-                // 2. Envoyer les données à Supabase 
-                const { data, error } = await supabaseClient
-                    .from('flights')
-                    .insert([active_flight])
-                    .select(); // On demande à récupérer la ligne créée (avec son ID et son Nbr)
-
-                if (error) {
-                    alert("Erreur lors de l'enregistrement : " + error.message);
-                    console.error("Détails de l'erreur :", error);
-                } else {
-                    console.log("Vol enregistré avec succès !", data);
-                }
-
-            } catch (err) {
-                console.error("Erreur lors de la sauvegarde :", err);
-                alert("Erreur : " + err.message);
-            }
-        }
     </script>
 </body>
 

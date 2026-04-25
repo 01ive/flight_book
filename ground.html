@@ -152,41 +152,16 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="bundle.js"></script>
+    <script src="supabase.js"></script>
 
     <script>
-
-        // Initialisation de Supabase
-        const supabaseUrl = 'https://ggoscybduasqnhilwdtq.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdnb3NjeWJkdWFzcW5oaWx3ZHRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDg4OTQsImV4cCI6MjA5MjE4NDg5NH0.sp9pZE9JELgIQExreEoIewu1Zh6VWKxYdt4s87UblR8'; // Utilise ta clé complète ici
-        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-
-        // Fonction pour charger les données depuis Supabase
-        async function loadFlightsFromSupabase() {
-            const { data, error } = await supabaseClient
-                .from('ground') // Nom de ta table sur Supabase
-                .select('*')
-                .order('date', { ascending: false }); // Optionnel : trier par date
-
-            if (error) {
-                console.error('Erreur lors du chargement des grounds:', error);
-                return;
-            }
-
-            if (data) {
-                console.log('Données reçues de Supabase:', data);
-                read_flight_book(data); // On réutilise ta fonction existante
-            }
-        }
-
-        // Appeler la fonction au chargement de la page
-        loadFlightsFromSupabase();
-
+        // Get data from Supabase and read flight book
+        loadTableFromSupabase(supabaseTableGroundName).then(supa_data => read_flight_book(supa_data));
 
         // Global variables
         var book_data = [];       // Json data strucure
         var flight_table = null;    // DataTable instance
         
-
         // Init manual entry form visibility
         document.getElementById('manual_entry').style.visibility = 'hidden';
 
@@ -376,11 +351,6 @@
             update_table(book_data);
             update_charts(book_data);
         }
-
-        // Load flight book data from JSON file
-        // fetch('ground.json')
-        //     .then(response => response.json())
-        //     .then(data => read_flight_book(data)).catch(read_flight_book([]));
 
         // Create file reader object
         var file_name = null;
