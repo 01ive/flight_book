@@ -260,9 +260,16 @@
 
                 // Load book.json and ground.json and compute totals per category
                 Promise.all([
-                    fetch('book.json').then(r => r.json()).catch(() => []),
-                    fetch('ground.json').then(r => r.json()).catch(() => [])
-                ]).then(([bookData, groundData]) => {
+                    supabaseClient.from('flights').select('*'),
+                    supabaseClient.from('ground').select('*')
+                ]).then(([flightsResponse, groundResponse]) => {
+
+                    // Vérification des erreurs éventuelles
+                    if (flightsResponse.error) console.error('Erreur vols:', flightsResponse.error);
+                    if (groundResponse.error) console.error('Erreur gonflage:', groundResponse.error);
+
+                    const bookData = flightsResponse.data;
+                    const groundData = groundResponse.data;
                     const flightHours = [];
                     const groundHours = [];
 
@@ -410,12 +417,6 @@
             update_table(book_data);
             update_charts(book_data);
         }
-
-        // Load stats data from JSON file
-        // fetch('stats.json')
-        //     .then(response => response.json())
-        //     .then(data => read_flight_book(data))
-        //     .catch(() => read_flight_book([]));
 
         // Envent on manual_entry_button
         document.getElementById('manual_entry_button').addEventListener('click', function () {
