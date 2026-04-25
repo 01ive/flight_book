@@ -6,6 +6,7 @@
     <title>Tableau des vols</title>
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -169,6 +170,57 @@
     <script src="bundle.js"></script>
 
     <script>
+
+        // Initialisation de Supabase
+        const supabaseUrl = 'https://ggoscybduasqnhilwdtq.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdnb3NjeWJkdWFzcW5oaWx3ZHRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDg4OTQsImV4cCI6MjA5MjE4NDg5NH0.sp9pZE9JELgIQExreEoIewu1Zh6VWKxYdt4s87UblR8'; // Utilise ta clé complète ici
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+        const supabaseStorageTracksName = 'tracks';
+
+        function getIGCFileUrl(fileName) {
+            const { data: storageData, error } = supabaseClient
+                .storage
+                .from(supabaseStorageTracksName)
+                .getPublicUrl(fileName);
+
+            if (error) {
+                console.error('Erreur lors de la récupération de l\'URL du fichier:', error);
+                return null;
+            }
+
+            return storageData.publicUrl;
+        }
+
+        // Fonction pour charger les données depuis Supabase
+        async function loadFlightsFromSupabase() {
+            const { data, error } = await supabaseClient
+                .from('flights') // Nom de ta table sur Supabase
+                .select('*')
+                .order('date', { ascending: false }); // Optionnel : trier par date
+
+            if (error) {
+                console.error('Erreur lors du chargement des vols:', error);
+                return;
+            }
+
+            if (data) {
+                console.log('Données reçues de Supabase:', data);
+                read_flight_book(data); // On réutilise ta fonction existante
+            }
+        }
+
+        // Appeler la fonction au chargement de la page
+        loadFlightsFromSupabase();
+
+        
+
+
+
+
+
+
+
+
         // Global variables
         var book_data = null;       // Json data strucure
         var flight_table = null;    // DataTable instance
@@ -375,7 +427,7 @@
                 // Manage flight link if track file is available or not
                 var file_link = vol.nbr;
                 if (vol.file_name) {
-                    file_link = `<a href="flight.html?file=http://01ive.free.fr/tracks_gen/${vol.file_name}">${vol.nbr}<a>`;
+                    file_link = `<a href="flight.html?file=${getIGCFileUrl(vol.file_name)}">${vol.nbr}</a>`;
                 }
                 
                 // First column: checkbox to select flight for viewing in Track Analyser
@@ -412,13 +464,13 @@
         }   // End of update_table function
 
         // Add flight to book data and table
-        function add_flight_to_book(flight) {
+        async function add_flight_to_book(flight) {
             flight.nbr = book_data.length + 1;
             book_data.unshift(flight);
             // Manage flight link if track file is available or not
             var file_link = flight.nbr;
             if (flight.file_name) {
-                file_link = `<a href="flight.html?file=http://01ive.free.fr/tracks_gen/${flight.file_name}">${flight.nbr}<a>`;
+                file_link = `<a href="flight.html?file=${getIGCFileUrl(flight.file_name)}">${flight.nbr}</a>`;
             }
             const checkboxHtml = flight.file_name ?
                 `<input type="checkbox" class="flight-select" data-file="${flight.file_name}">` :
@@ -440,6 +492,19 @@
             flight_table.row.add(newRow).draw();
 
             update_charts(book_data);
+
+            // 2. Envoyer les données à Supabase 
+            const { data, error } = await supabaseClient
+                .from('flights')
+                .insert([flight])
+                .select(); // On demande à récupérer la ligne créée (avec son ID et son Nbr)
+
+            if (error) {
+                alert("Erreur lors de l'enregistrement : " + error.message);
+                console.error("Détails de l'erreur :", error);
+            } else {
+                console.log("Vol enregistré avec succès !", data);
+            }
         }   // End of add_flight_to_book function
 
         function read_flight_book(data) {
@@ -448,10 +513,18 @@
             update_charts(book_data);
         }
 
+        /* Supabase
+        https://ggoscybduasqnhilwdtq.supabase.co
+        eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdnb3NjeWJkdWFzcW5oaWx3ZHRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDg4OTQsImV4cCI6MjA5MjE4NDg5NH0.sp9pZE9JELgIQExreEoIewu1Zh6VWKxYdt4s87UblR8
+
+        sb_publishable_-dyOk0s-yGhoGKAzCOPyQw_AGUcXDi9
+
+        https://ggoscybduasqnhilwdtq.supabase.co/flights
+        */
         // Load flight book data from JSON file
-        fetch('book.json')
-            .then(response => response.json())
-            .then(data => read_flight_book(data));
+        // fetch('book.json')
+        //     .then(response => response.json())
+        //     .then(data => read_flight_book(data));
 
         // Create file reader object
         var file_name = null;
@@ -549,7 +622,7 @@
                 alert('No flights selected');
                 return;
             }
-            const urls = checked.map(f => 'http://01ive.free.fr/tracks_gen/' + f);
+            const urls = checked.map(f => getIGCFileUrl(f));
             // const param = encodeURIComponent(urls.join(','));
             const param = urls.join(',');
             window.location.assign('flight.html?files=' + param, '_blank');
