@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>Stats - Events</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <style>
@@ -98,6 +99,7 @@
         <div style="display: float; right; margin-left: auto;">
             <button id="manual_entry_button" type="submit">➕ Manual entry</button>
             <button id="save_button_json">💾 Save to file</button>
+            <button id="auth-status-btn">🔐 Login</button>
         </div>
     </div>
 
@@ -111,7 +113,7 @@
                 <option value="Purchase">Purchase</option>
                 <!-- Cleaning option removed per request -->
             </select>
-            <input type="text" id="name_in" placeholder="Optional name for Purchase (used in legend)" style="width:100%; margin-top:6px;" />
+            <input type="text" id="gliderType_in" placeholder="Optional name for Purchase (used in legend)" style="width:100%; margin-top:6px;" />
             <textarea id="comments_in" placeholder="Comments" rows="3" style="width:100%"></textarea>
             <button type="submit">Enter</button>
         </form>
@@ -141,7 +143,6 @@
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="bundle.js"></script>
-    <script src="supabase.js"></script>
 
     <script>
         loadTableFromSupabase(supabaseTableStatsName).then(supa_data => read_flight_book(supa_data));
@@ -161,9 +162,9 @@
                 event_count[t] = (event_count[t] || 0) + 1;
             });
 
-            // Destroy previous charts
-            const all_charts = Chart.instances ? Object.values(Chart.instances) : [];
-            all_charts.forEach(chart => chart.destroy());
+            // // Destroy previous charts
+            // const all_charts = Chart.instances ? Object.values(Chart.instances) : [];
+            // all_charts.forEach(chart => chart.destroy());
 
             // (Pie chart removed) Event type distribution chart intentionally omitted.
 
@@ -238,6 +239,10 @@
                     supabaseClient.from(supabaseTableFlightsName).select('*'),
                     supabaseClient.from(supabaseTableGroundName).select('*')
                 ]).then(([flightsResponse, groundResponse]) => {
+
+                    // Destroy previous charts
+                    const all_charts = Chart.instances ? Object.values(Chart.instances) : [];
+                    all_charts.forEach(chart => chart.destroy());
 
                     // Vérification des erreurs éventuelles
                     if (flightsResponse.error) console.error('Erreur vols:', flightsResponse.error);
@@ -385,6 +390,15 @@
             stats_table.row.add(newRow).draw();
 
             update_charts(book_data);
+
+            // 2. Envoyer les données à Supabase 
+            supabaseClient
+                .from(supabaseTableStatsName)
+                .insert([event])
+                .select()
+                    .then(data => {
+                        console.log("Flight recorded successfully !", data);
+                    });
         }
 
         function read_flight_book(data) {
@@ -451,7 +465,16 @@
             });
         });
     </script>
-
+    <div id="login-modal" style="display:none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+        <div style="background-color: white; margin: 15% auto; padding: 20px; border-radius: 10px; width: 300px; text-align: center; position: relative;">
+            <span id="close-modal" style="position: absolute; right: 15px; top: 10px; cursor: pointer; font-size: 20px;">&times;</span>
+            <h3>Access</h3>
+            <input type="email" id="login-email" placeholder="Email" style="width: 90%; margin-bottom: 10px; padding: 8px;">
+            <input type="password" id="login-password" placeholder="Mot de passe" style="width: 90%; margin-bottom: 10px; padding: 8px;">
+            <button id="do-login" style="width: 95%; padding: 10px; background: #4caf50; color: white; border: none; cursor: pointer;">Connect</button>
+            <p id="login-error" style="color: red; font-size: 12px; display: none;"></p>
+        </div>
+    </div>
 </body>
-
+<script src="supabase_auth.js"></script>
 </html>
