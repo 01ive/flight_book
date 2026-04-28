@@ -38,6 +38,8 @@
             <button type="submit">Enter</button>
         </form>
     </div>
+    <supabase-login></supabase-login>
+    
     <p></p>
     <table id="flight_table" class="display">
         <thead>
@@ -369,17 +371,6 @@
             update_charts(filteredData);
         });
     </script>
-
-    <div id="login-modal">
-        <div id="login-background">
-            <span id="close-modal">&times;</span>
-            <h3>Access</h3>
-            <input type="email" id="login-email" placeholder="Email">
-            <input type="password" id="login-password" placeholder="Mot de passe">
-            <button id="do-login">Connect</button>
-            <p id="login-error"></p>
-        </div>
-    </div>
 </body>
 <script src="supabase_auth.js"></script>
 </html>

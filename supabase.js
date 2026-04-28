@@ -112,3 +112,21 @@ async function saveTrackToSupabase(fileBlob, active_flight) {
         alert("Erreur : " + err.message);
     }
 }
+
+class SupabaseLogin extends HTMLElement {
+    connectedCallback() {
+        this.innerHTML = `
+            <div id="login-modal">
+                <div id="login-background">
+                    <span id="close-modal">&times;</span>
+                    <h3>Access</h3>
+                    <input type="email" id="login-email" placeholder="Email">
+                    <input type="password" id="login-password" placeholder="Mot de passe">
+                    <button id="do-login">Connect</button>
+                    <p id="login-error"></p>
+                </div>
+            </div>
+        `;
+    }
+}
+customElements.define('supabase-login', SupabaseLogin);
