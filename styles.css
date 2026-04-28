@@ -43,7 +43,7 @@ table {
     max-width: 100%;
 }
 #nb_flight_per_site {
-    max-width: 25%;
+    max-width: 100%;
 }
 #distance_chart {
     max-height: 33vh;
