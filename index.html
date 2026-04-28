@@ -12,29 +12,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js"></script>
     <script src="bundle.js"></script>
+    <script src="tabs.js"></script>
 </head>
 
 <body>
-    <div class="tabs">
-        <a href="index.html" class="tab active">🪂 Flight</a>
-        <a href="ground.html" class="tab">🌬 Ground Handling</a>
-        <a href="flight.html" class="tab">✈ Track Analyser</a>
-        <a href="stats.html" class="tab">📉 Stats</a>
-        <div class="right_button">
-            <button>
-                <label id="my-file-selector" for="file-selector">📎 Add track</label>
-                <input type="file" id="file-selector" accept=".igc, .gpx" placeholder="Select a file">
-            </button>
-
-            <button id="manual_entry_button" type="submit">➕ Manual entry</button>
-
-            <button id="view_selected_button">👁️ View flights</button>
-
-            <button id="save_button_json">💾 Save to file</button>
-
-            <button id="auth-status-btn">🔐 Login</button>
-        </div>
-    </div>
+    <app-tabs active="flight"></app-tabs>
 
     <div id="manual_entry">
         <form id="addRowForm">

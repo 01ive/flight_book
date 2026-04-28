@@ -7,18 +7,11 @@
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js"></script>
+    <script src="tabs.js"></script>
 </head>
 
 <body>
-    <div class="tabs">
-        <a href="index.html" class="tab">🪂 Flight</a>
-        <a href="ground.html" class="tab">🌬 Ground Handling</a>
-        <a href="flight.html" class="tab active">✈ Track Analyser</a>
-        <a href="stats.html" class="tab">📉 Stats</a>
-        <div class="right_button">
-            <button id="auth-status-btn">🔐 Login</button>
-        </div>
-    </div>
+    <app-tabs active="track"></app-tabs>
 
     <supabase-login></supabase-login>
 

@@ -12,20 +12,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js"></script>
     <script src="bundle.js"></script>
+    <script src="tabs.js"></script>
 </head>
 
 <body>
-    <div class="tabs">
-        <a href="index.html" class="tab">🪂 Flight</a>
-        <a href="ground.html" class="tab">🌬 Ground Handling</a>
-        <a href="flight.html" class="tab">✈ Track Analyser</a>
-        <a href="stats.html" class="tab active">📉 Stats</a>
-        <div class="right_button">
-            <button id="manual_entry_button" type="submit">➕ Manual entry</button>
-            <button id="save_button_json">💾 Save to file</button>
-            <button id="auth-status-btn">🔐 Login</button>
-        </div>
-    </div>
+    <app-tabs active="stats"></app-tabs>
 
     <div id="manual_entry">
         <form id="addRowForm">
