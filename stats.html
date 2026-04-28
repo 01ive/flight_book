@@ -55,6 +55,7 @@
     </div>
 
     <script>
+        supabaseAuth();
         loadTableFromSupabase(supabaseTableStatsName).then(supa_data => read_flight_book(supa_data));
 
         // Global variables
@@ -376,5 +377,4 @@
         });
     </script>
 </body>
-<script src="supabase_auth.js"></script>
 </html>

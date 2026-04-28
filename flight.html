@@ -18,6 +18,7 @@
     <iframe id="content-frame"></iframe>
 
     <script>
+        supabaseAuth();
         // Get URL parameters and pass them to the iframe
         const iframeUrl = `https://01ive.github.io/igc_trace_analyser/index.html${window.location.search}`;
         // const iframeUrl = `../client/index.html${window.location.search}`;
@@ -35,5 +36,4 @@
         });
     </script>
 </body>
-<script src="supabase_auth.js"></script>
 </html>

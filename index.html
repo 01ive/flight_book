@@ -71,6 +71,7 @@
     </div>
 
     <script>
+        supabaseAuth();
         // Get data from Supabase and read flight book
         loadTableFromSupabase(supabaseTableFlightsName).then(supa_data => read_flight_book(supa_data));
         
@@ -616,5 +617,4 @@
         });
     </script>
 </body>
-<script src="supabase_auth.js"></script>
 </html>
