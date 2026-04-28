@@ -7,8 +7,8 @@ class Tabs extends HTMLElement {
         const text_head = `
             <div class="tabs">
                 <a href="index.html" class="tab ${activeTab === 'flight' ? 'active' : ''}">🪂 Flight</a>
-                <a href="ground.html" class="tab ${activeTab === 'ground' ? 'active' : ''}">🌬 Ground Handling</a>
-                <a href="flight.html" class="tab ${activeTab === 'track' ? 'active' : ''}">✈ Track Analyser</a>
+                <a href="ground.html" class="tab ${activeTab === 'ground' ? 'active' : ''}">💨 Ground Handling</a>
+                <a href="flight.html" class="tab ${activeTab === 'track' ? 'active' : ''}">🗺️ Track Analyser</a>
                 <a href="stats.html" class="tab ${activeTab === 'stats' ? 'active' : ''}">📉 Stats</a>
                 <div class="right_button">
         `;
