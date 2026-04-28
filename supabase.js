@@ -115,13 +115,12 @@ async function saveTrackToSupabase(fileBlob, active_flight) {
 
 // Function to manage authentification to Supabase Database
 function supabaseAuth() {
-    // --- GESTION DE L'AUTHENTIFICATION ---
     const modal = document.getElementById('login-modal');
     const authBtn = document.getElementById('auth-status-btn');
 
-    // Ouvrir / Fermer la modale
+    // Open login modal or logout if already connected
     authBtn.onclick = () => {
-        // Si déjà connecté, on propose le logout
+        // If user is already logged in, log them out. Otherwise, show the login modal.
         supabaseClient.auth.getSession().then(({ data }) => {
             if (data.session) {
                 supabaseClient.auth.signOut().then(() => location.reload());
@@ -133,7 +132,7 @@ function supabaseAuth() {
 
     document.getElementById('close-modal').onclick = () => modal.style.display = "none";
 
-    // Action de login
+    // Login process
     document.getElementById('do-login').onclick = async () => {
         const email = document.getElementById('login-email').value;
         const password = document.getElementById('login-password').value;
@@ -146,19 +145,18 @@ function supabaseAuth() {
             errorP.style.display = "block";
         } else {
             modal.style.display = "none";
-            checkUserSession(); // Mettre à jour l'interface
+            checkUserSession(); // Update UI after login
         }
     };
 
-    // Vérifier si l'utilisateur est connecté pour afficher/masquer les boutons admin
+    // Check user session on page load to update UI accordingly
     async function checkUserSession() {
         const { data: { session } } = await supabaseClient.auth.getSession();
         
-        // Si connecté, on affiche les boutons d'ajout, sinon on les cache
+        // If connected, show admin elements. Otherwise, hide them.
         const adminElements = [
             document.getElementById('manual_entry_button'),
             document.getElementById('my-file-selector') 
-            // ajoute ici tout ce qui permet de modifier les données
         ];
 
         if (session) {
@@ -168,10 +166,11 @@ function supabaseAuth() {
         }
     }
 
-    // Appeler au chargement de la page
+    // To be called on page load to set the correct UI state based on user session
     checkUserSession();
 }
 
+// Custom element for the login modal
 class SupabaseLogin extends HTMLElement {
     connectedCallback() {
         this.innerHTML = `

@@ -71,6 +71,7 @@
     </div>
 
     <script>
+        // Manage Supabase authentication
         supabaseAuth();
         // Get data from Supabase and read flight book
         loadTableFromSupabase(supabaseTableFlightsName).then(supa_data => read_flight_book(supa_data));

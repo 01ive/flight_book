@@ -1,4 +1,5 @@
 
+// Tabs component for the navigation bar. It highlights the active tab and includes buttons for file upload, manual entry, and saving data.
 class Tabs extends HTMLElement {
     connectedCallback() {
         const activeTab = this.getAttribute('active');

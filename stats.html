@@ -55,7 +55,9 @@
     </div>
 
     <script>
+        // Manage Supabase authentication
         supabaseAuth();
+        // Get data from Supabase and read flight book
         loadTableFromSupabase(supabaseTableStatsName).then(supa_data => read_flight_book(supa_data));
 
         // Global variables
@@ -72,12 +74,6 @@
                 const t = e.event_type || 'Unknown';
                 event_count[t] = (event_count[t] || 0) + 1;
             });
-
-            // // Destroy previous charts
-            // const all_charts = Chart.instances ? Object.values(Chart.instances) : [];
-            // all_charts.forEach(chart => chart.destroy());
-
-            // (Pie chart removed) Event type distribution chart intentionally omitted.
 
             // ---- Manatane chart: for each event category, show flight hours and ground hours
             (function computeAndDrawManatane() {
