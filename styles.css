@@ -74,3 +74,14 @@ table {
 .tab:hover {
     background: #eee;
 }
+.right_button {
+    display: float;
+    margin-left: auto;
+}
+#content-frame {
+    width: 100%;
+    height: calc(100vh - 60px);
+    border: none;
+    margin: 0;
+    padding: 0;
+}

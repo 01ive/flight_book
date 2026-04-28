@@ -3,12 +3,15 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Tableau des vols</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase.js"></script>
-    <!-- DataTables CSS -->
+    <title>Ground Handling</title>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
+    <script src="bundle.js"></script>
 </head>
 
 <body>
@@ -17,7 +20,7 @@
         <a href="ground.html" class="tab active">🌬 Ground Handling</a>
         <a href="flight.html" class="tab">✈ Track Analyser</a>
         <a href="stats.html" class="tab">📉 Stats</a>
-        <div style="display: float; right; margin-left: auto;">
+        <div class="right_button">
             <button id="manual_entry_button" type="submit">➕ Manual entry</button>
             <button id="save_button_json">💾 Save to file</button>
             <button id="auth-status-btn">🔐 Login</button>
@@ -36,7 +39,7 @@
         </form>
     </div>
     <p></p>
-    <table id="flight_table">
+    <table id="flight_table" class="display">
         <thead>
             <tr>
                 <th>Nbr</th>
@@ -66,12 +69,6 @@
             <canvas id="distance_chart"></canvas>
         </div>
     </div>
-
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="bundle.js"></script>
 
     <script>
         // Get data from Supabase and read flight book
