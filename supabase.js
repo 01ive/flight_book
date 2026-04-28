@@ -112,3 +112,79 @@ async function saveTrackToSupabase(fileBlob, active_flight) {
         alert("Erreur : " + err.message);
     }
 }
+
+// Function to manage authentification to Supabase Database
+function supabaseAuth() {
+    const modal = document.getElementById('login-modal');
+    const authBtn = document.getElementById('auth-status-btn');
+
+    // Open login modal or logout if already connected
+    authBtn.onclick = () => {
+        // If user is already logged in, log them out. Otherwise, show the login modal.
+        supabaseClient.auth.getSession().then(({ data }) => {
+            if (data.session) {
+                supabaseClient.auth.signOut().then(() => location.reload());
+            } else {
+                modal.style.display = "block";
+            }
+        });
+    };
+
+    document.getElementById('close-modal').onclick = () => modal.style.display = "none";
+
+    // Login process
+    document.getElementById('do-login').onclick = async () => {
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        const errorP = document.getElementById('login-error');
+
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            errorP.innerText = "Erreur : " + error.message;
+            errorP.style.display = "block";
+        } else {
+            modal.style.display = "none";
+            checkUserSession(); // Update UI after login
+        }
+    };
+
+    // Check user session on page load to update UI accordingly
+    async function checkUserSession() {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        // If connected, show admin elements. Otherwise, hide them.
+        const adminElements = [
+            document.getElementById('manual_entry_button'),
+            document.getElementById('my-file-selector') 
+        ];
+
+        if (session) {
+            authBtn.innerText = "🔓 Disconnect";
+        } else {
+            authBtn.innerText = "🔐 Login";
+        }
+    }
+
+    // To be called on page load to set the correct UI state based on user session
+    checkUserSession();
+}
+
+// Custom element for the login modal
+class SupabaseLogin extends HTMLElement {
+    connectedCallback() {
+        this.innerHTML = `
+            <div id="login-modal">
+                <div id="login-background">
+                    <span id="close-modal">&times;</span>
+                    <h3>Access</h3>
+                    <input type="email" id="login-email" placeholder="Email">
+                    <input type="password" id="login-password" placeholder="Mot de passe">
+                    <button id="do-login">Connect</button>
+                    <p id="login-error"></p>
+                </div>
+            </div>
+        `;
+    }
+}
+customElements.define('supabase-login', SupabaseLogin);
