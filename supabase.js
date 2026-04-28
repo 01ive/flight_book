@@ -27,7 +27,7 @@ async function loadTableFromSupabase(tableName) {
     const { data, error } = await supabaseClient
         .from(tableName)
         .select('*')
-        .order('date', { ascending: false }); // Optional: sort by date, newest first
+        .order('nbr', { ascending: false }); // Optional: sort by date, newest first
 
     if (error) {
         console.error('Erreur lors du chargement des vols:', error);
