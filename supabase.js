@@ -1,59 +1,83 @@
 // Supabase configuration
 const supabaseUrl = 'https://ggoscybduasqnhilwdtq.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdnb3NjeWJkdWFzcW5oaWx3ZHRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDg4OTQsImV4cCI6MjA5MjE4NDg5NH0.sp9pZE9JELgIQExreEoIewu1Zh6VWKxYdt4s87UblR8'; // Utilise ta clé complète ici
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdnb3NjeWJkdWFzcW5oaWx3ZHRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MDg4OTQsImV4cCI6MjA5MjE4NDg5NH0.sp9pZE9JELgIQExreEoIewu1Zh6VWKxYdt4s87UblR8';
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 const supabaseStorageTracksName = 'tracks';
 const supabaseTableFlightsName = 'flights';
 const supabaseTableGroundName = 'ground';
 const supabaseTableStatsName = 'stats';
 
-// Function to get the public URL of an IGC file stored in Supabase
+// --- CONFIGURATION MODE LOCAL / FALLBACK ---
+const LOCAL_DATA_PATH = '../local_data';
+let isLocalFallback = false; // Passe automatiquement à true si Supabase est en pause
+
+// Function to get the public URL of an IGC file (Supabase or Local Data URL)
 function getIGCFileUrl(fileName) {
-    const { data: storageData, error } = supabaseClient
-        .storage
-        .from(supabaseStorageTracksName)
-        .getPublicUrl(fileName);
+    if (!isLocalFallback) {
+        const { data: storageData, error } = supabaseClient
+            .storage
+            .from(supabaseStorageTracksName)
+            .getPublicUrl(fileName);
 
-    if (error) {
-        console.error('Erreur lors de la récupération de l\'URL du fichier:', error);
-        return null;
+        if (error) {
+            console.error('Erreur lors de la récupération de l\'URL du fichier:', error);
+            return null;
+        }
+
+        return storageData.publicUrl;
+    } else {
+        const relativePath = `${LOCAL_DATA_PATH}/${supabaseStorageTracksName}/${encodeURIComponent(fileName)}`;
+        return new URL(relativePath, window.location.href).href;
     }
-
-    return storageData.publicUrl;
 }
 
-// Function to load flights from Supabase
+// Function to load tables (flights, ground, stats) from Supabase with automatic local fallback
 async function loadTableFromSupabase(tableName) {
-    const { data, error } = await supabaseClient
-        .from(tableName)
-        .select('*')
-        .order('nbr', { ascending: false }); // Optional: sort by date, newest first
+    if (!isLocalFallback) {
+        const { data, error } = await supabaseClient
+            .from(tableName)
+            .select('*')
+            .order('nbr', { ascending: false });
 
-    if (error) {
-        console.error('Erreur lors du chargement des vols:', error);
-        return;
-    }
+        if (error) {
+            console.error('Erreur lors du chargement des vols:', error);
+            return;
+        }
 
-    if (data) {
-        console.log('Données reçues de Supabase:', data);
+        if (data) {
+            console.log('Données reçues de Supabase:', data);
+            return data;
+        }
+    } else {
+        // --- LECTURE LOCALE (Fallback) ---
+        const response = await fetch(`${LOCAL_DATA_PATH}/${tableName}.json`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        console.log(`[Local] Données '${tableName}' chargées depuis ${LOCAL_DATA_PATH}/${tableName}.json :`, data);
         return data;
     }
 }
 
-// Function to get the next flight number based on the count of existing flights in Supabase
+// Function to get the next flight number based on the count of existing flights
 async function getNextFlightNumber() {
-    const { count, error } = await supabaseClient
-        .from('flights')
-        .select('*', { count: 'exact', head: true });
+    let count = 0;
 
-    if (error) {
-        console.error("Erreur lors de la récupération du compte :", error);
-        return null;
+    if (!isLocalFallback) {
+        const { count: supCount, error } = await supabaseClient
+                .from(supabaseTableFlightsName)
+                .select('*', { count: 'exact', head: true });
+
+        if (error) {
+            console.error("Erreur lors de la récupération du compte :", error);
+            return null;
+        }
+        count = supCount;
+    } else {
+        // Fallback local : calcul depuis flights.json
+        const flights = await loadTableFromSupabase(supabaseTableFlightsName);
+        count = flights.reduce((max, f) => Math.max(max, Number(f.nbr) || 0), 0);
     }
-
-    console.log("Nombre total de vols :", count);
-    
-    // Pour ton prochain vol, le numéro sera :
+    console.log("Nombre total de vols (Supabase) :", count);
     return count + 1;
 }
 
@@ -118,9 +142,17 @@ function supabaseAuth() {
     const modal = document.getElementById('login-modal');
     const authBtn = document.getElementById('auth-status-btn');
 
-    // Open login modal or logout if already connected
+    // Détection localhost dans supabaseAuth()
+    if (['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+        isLocalFallback = true;
+    }
+
     authBtn.onclick = () => {
-        // If user is already logged in, log them out. Otherwise, show the login modal.
+        // Permet de basculer manuellement en mode local si besoin
+        if (isLocalFallback) {
+            alert("Mode local actif (Supabase est hors-ligne ou en pause).");
+            return;
+        }
         supabaseClient.auth.getSession().then(({ data }) => {
             if (data.session) {
                 supabaseClient.auth.signOut().then(() => location.reload());
@@ -168,6 +200,8 @@ function supabaseAuth() {
 
     // To be called on page load to set the correct UI state based on user session
     checkUserSession();
+
+    return isLocalFallback;
 }
 
 // Custom element for the login modal
