@@ -84,187 +84,277 @@
         document.getElementById('manual_entry').style.visibility = 'hidden';
 
         function update_charts(data) {
-            const dates = [], distances = [];
-
-            const flight_per_year = {}; // Flight grouped by year
-            const flight_per_site = {}; // Flight grouped by site
-
             // Reinit charts (for refresh)
             const all_charts = Chart.instances ? Object.values(Chart.instances) : [];
             all_charts.forEach(chart => chart.destroy());
 
-            data.forEach(vol => {
-                // Prepare dates and distances dict for chart usage
-                if(vol.distance_total) {
-                    dates.push(vol.date);
-                    distances.push((vol.distance_total / 1000).toFixed(2)); // en km
+            // Ignore undefined elements when filtering from DataTables
+            const cleanData = (data || []).filter(Boolean);
+
+            const flight_per_year = {};
+            const flight_per_site = {};
+            const quality_counts = { plouf: 0, maintien: 0, thermique: 0 };
+
+            // Tableaux pour le graphe de performance chronologique (du plus ancien au plus récent)
+            const perfLabels = [];
+            const perfGains = [];
+            const perfOverStart = [];
+            const perfDistances = [];
+            const perfMeta = [];
+
+            // On parcourt les vols du plus ancien au plus récent pour l'axe temporel
+            const chronological = [...cleanData].sort((a, b) => (a.nbr || 0) - (b.nbr || 0));
+
+            chronological.forEach(vol => {
+                // 1. Calcul de la durée en minutes
+                const [h, m, s] = (vol.duration || "00:00:00").split(':').map(Number);
+                const durationMin = (h || 0) * 60 + (m || 0) + (s || 0) / 60;
+
+                // 2. Agrégation par Année (Solo vs École + Temps)
+                const year = new Date(vol.date).getFullYear();
+                if (!isNaN(year)) {
+                    if (!flight_per_year[year]) {
+                        flight_per_year[year] = { solo: 0, ecole: 0, total_in_minutes: 0 };
+                    }
+                    const isSolo = !vol.monitor || vol.monitor.trim().toLowerCase() === 'none';
+                    if (isSolo) {
+                        flight_per_year[year].solo += 1;
+                    } else {
+                        flight_per_year[year].ecole += 1;
+                    }
+                    flight_per_year[year].total_in_minutes += durationMin;
                 }
 
-                // Create short name for site
+                // 3. Agrégation par Site (nettoyage des espaces et de la casse)
+                let rawSite = (vol.site || "Inconnu").trim();
+                let words = rawSite.split(/\s+/);
                 let site_short_name = "";
-                let sites = vol.site.split(" ");    // Split site name using spaces
-                for (word in sites) {               // Loop on each word
-                    site_short_name += sites[word].toLowerCase();
-                    if (sites[word].length < 4) {   // If word is too short add a space and loop to next word else short name is done
+                for (let i = 0; i < words.length; i++) {
+                    site_short_name += words[i].toLowerCase();
+                    if (words[i].length < 4 && i < words.length - 1) {
                         site_short_name += " ";
                     } else {
                         break;
                     }
                 }
-                // Group flights per site
-                if (!flight_per_site[site_short_name]) {
-                    flight_per_site[site_short_name] = 0;
-                }
-                flight_per_site[site_short_name] += 1;
+                // Première lettre en majuscule
+                site_short_name = site_short_name.charAt(0).toUpperCase() + site_short_name.slice(1);
+                flight_per_site[site_short_name] = (flight_per_site[site_short_name] || 0) + 1;
 
-                // Group data per year
-                const year = new Date(vol.date).getFullYear();
-                if (!flight_per_year[year]) {
-                    flight_per_year[year] = {
-                        nb: 0,
-                        total_in_minutes: 0,
-                        solo: 0
-                    };
-                }
-                // Add flight to counter
-                flight_per_year[year].nb += 1;
-                // Count solo flights
-                if (vol.monitor === 'None') {
-                    flight_per_year[year].solo += 1;
-                }
-                // Add duration in minutes for year
-                const [h, m, s] = vol.duration.split(':').map(Number);
-                flight_per_year[year].total_in_minutes += h * 60 + m + s / 60;
-            }); // End of data.forEach
+                // 4. Catégorisation qualitative du vol (Plouf / Maintien / Thermique)
+                const gain = Number(vol.elevation_total) || 0;
+                const isSivGlitch = (Number(vol.max_vertical_speed) || 0) > 30; // Ignore le glitch GPS SIV #127
+                const cleanGain = isSivGlitch ? 0 : gain;
 
-            // Prepare data for charts
+                if (durationMin >= 20 || cleanGain >= 150) {
+                    quality_counts.thermique += 1;
+                } else if (durationMin >= 10 || cleanGain >= 40) {
+                    quality_counts.maintien += 1;
+                } else {
+                    quality_counts.plouf += 1;
+                }
+
+                // 5. Données du graphe de performance (uniquement vols avec trace GPS et hors glitch SIV)
+                if (vol.distance_total > 0 && !isSivGlitch) {
+                    perfLabels.push(`#${vol.nbr} (${vol.date})`);
+                    perfGains.push(Math.round(cleanGain));
+                    perfOverStart.push(Math.round(Number(vol.elevation_over_start) || 0));
+                    perfDistances.push(+(vol.distance_total / 1000).toFixed(2));
+                    perfMeta.push({
+                        site: rawSite,
+                        duration: vol.duration,
+                        glider: vol.gliderType || ''
+                    });
+                }
+            });
+
+            // =========================================================================
+            // GRAPHE 1 : Manhattan Empilé (Solo vs École) + Courbe Temps de vol
+            // =========================================================================
             const years = Object.keys(flight_per_year).sort();
-            const nbVols = years.map(a => flight_per_year[a].nb);
-            const tpsVols = years.map(a => flight_per_year[a].total_in_minutes / 60);
+            const soloVols = years.map(y => flight_per_year[y].solo);
+            const ecoleVols = years.map(y => flight_per_year[y].ecole);
+            const tpsVols = years.map(y => +(flight_per_year[y].total_in_minutes / 60).toFixed(1));
 
-            // Number of flights and flight time per year
             new Chart(document.getElementById('nb_flight_chart'), {
                 type: 'bar',
                 data: {
                     labels: years,
-                    datasets: [{
-                        label: 'Nombre de vols',
-                        data: nbVols,
-                        backgroundColor: '#4caf50',
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Temps de vol (h)',
-                        data: tpsVols,
-                        backgroundColor: '#2196f3',
-                        yAxisID: 'y1'
-                    }]
+                    datasets: [
+                        {
+                            label: 'Vols Solo',
+                            data: soloVols,
+                            backgroundColor: '#2196f3',
+                            stack: 'vols',
+                            yAxisID: 'y',
+                            order: 2
+                        },
+                        {
+                            label: 'Vols École / Stage',
+                            data: ecoleVols,
+                            backgroundColor: '#ff9800',
+                            stack: 'vols',
+                            yAxisID: 'y',
+                            order: 2
+                        },
+                        {
+                            label: 'Temps de vol (h)',
+                            data: tpsVols,
+                            type: 'line',
+                            borderColor: '#4caf50',
+                            backgroundColor: '#4caf50',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            yAxisID: 'y1',
+                            order: 1
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
-                    scales: {
-                        y: {
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'Nombre de vols'
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        title: { display: true, text: 'Volume annuel : Solo vs École & Heures' },
+                        tooltip: {
+                            callbacks: {
+                                afterBody: (items) => {
+                                    const idx = items[0].dataIndex;
+                                    const y = years[idx];
+                                    const total = soloVols[idx] + ecoleVols[idx];
+                                    const avgMin = Math.round(flight_per_year[y].total_in_minutes / total);
+                                    return `Total : ${total} vols | Moyenne : ${avgMin} min/vol`;
+                                }
                             }
+                        }
+                    },
+                    scales: {
+                        x: { stacked: true },
+                        y: {
+                            stacked: true,
+                            position: 'left',
+                            title: { display: true, text: 'Nombre de vols' }
                         },
                         y1: {
                             position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Temps de vol (h)'
-                            },
-                            grid: {
-                                drawOnChartArea: false
-                            }
+                            title: { display: true, text: 'Temps de vol (h)' },
+                            grid: { drawOnChartArea: false }
                         }
                     }
                 }
-            }); // End of nb_flight_chart
+            });
 
-            // Prepare data for solo flights chart
-            nb_flight_solo = years.map(a => flight_per_year[a].solo);
-            let total_vols = nbVols.reduce(
-                (accumulator, currentValue) => accumulator + currentValue,
-                initialValue = 0,
-            );
-            let total_vols_solo = nb_flight_solo.reduce(
-                (accumulator, currentValue) => accumulator + currentValue,
-                initialValue = 0,
-            );
-            let total_vols_ecole = total_vols - total_vols_solo;
-
-            // Number of solo flights chart
+            // =========================================================================
+            // GRAPHE 2 : Profil des vols (Plouf vs Maintien vs Thermique) en Doughnut
+            // =========================================================================
             new Chart(document.getElementById('nb_flight_solo'), {
-                type: 'pie',
+                type: 'doughnut',
                 data: {
-                    labels: ['Vols école', 'Vols solo'],
+                    labels: ['Plouf (<10 min)', 'Maintien / Zérotage (10-20 min)', 'Vol Thermique (>20 min ou D+ >150m)'],
+                    datasets: [{
+                        data: [quality_counts.plouf, quality_counts.maintien, quality_counts.thermique],
+                        backgroundColor: ['#90a4ae', '#29b6f6', '#ef5350']
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } },
+                        title: { display: true, text: 'Qualité d\'exploitation des vols' }
+                    }
+                }
+            });
+
+            // =========================================================================
+            // GRAPHE 3 : Top 10 des Sites (Barres horizontales triées)
+            // =========================================================================
+            const sortedSites = Object.entries(flight_per_site)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            new Chart(document.getElementById('nb_flight_per_site'), {
+                type: 'bar',
+                data: {
+                    labels: sortedSites.map(s => s[0]),
                     datasets: [{
                         label: 'Nombre de vols',
-                        data: [total_vols_ecole, total_vols_solo],
-                        backgroundColor: ['#4caf50', '#2196f3']
+                        data: sortedSites.map(s => s[1]),
+                        backgroundColor: '#7e57c2'
                     }]
                 },
                 options: {
+                    indexAxis: 'y',
+                    responsive: true,
                     plugins: {
-                        legend: {
-                            display: false,
-                        },
-                        title: {
-                            display: true,
-                            text: 'Vols solo / école'
-                        }
+                        legend: { display: false },
+                        title: { display: true, text: 'Top 10 Sites de vol' }
                     }
                 }
-            }); // End of nb_flight_solo
+            });
 
-            // Flight per site chart
-            let flight_per_siteName = Object.entries(flight_per_site).map(a => a[0]);
-            let flight_per_siteValues = Object.entries(flight_per_site).map(a => a[1]);
-            new Chart(document.getElementById('nb_flight_per_site'), {
-                type: 'pie',
-                data: {
-                    labels: flight_per_siteName,
-                    datasets: [{
-                        label: 'Sites de vols',
-                        data: flight_per_siteValues
-                    }]
-                },
-                options: {
-                    plugins: {
-                        legend: {
-                            display: false,
-                        },
-                        title: {
-                            display: true,
-                            text: 'Sites'
-                        }
-                    }
-                }
-            }); // End of nb_flight_per_site
-
-            // Add distance chart
+            // =========================================================================
+            // GRAPHE 4 : Performance par vol (Gain Thermique D+ & Distance)
+            // =========================================================================
             new Chart(document.getElementById('distance_chart'), {
                 type: 'bar',
                 data: {
-                    labels: dates.reverse(),
-                    datasets: [{
-                        label: 'Distance totale (km)',
-                        data: distances.reverse(),
-                        backgroundColor: '#3e95cd'
-                    }]
+                    labels: perfLabels,
+                    datasets: [
+                        {
+                            label: 'Gain thermique cumulé D+ (m)',
+                            data: perfGains,
+                            backgroundColor: 'rgba(239, 83, 80, 0.8)',
+                            yAxisID: 'yGain',
+                            order: 2
+                        },
+                        {
+                            label: 'Gain max / déco (m)',
+                            data: perfOverStart,
+                            backgroundColor: 'rgba(255, 167, 38, 0.85)',
+                            yAxisID: 'yGain',
+                            order: 2
+                        },
+                        {
+                            label: 'Distance parcourue (km)',
+                            data: perfDistances,
+                            type: 'line',
+                            borderColor: '#3e95cd',
+                            backgroundColor: '#3e95cd',
+                            borderWidth: 2,
+                            pointRadius: 2,
+                            tension: 0.2,
+                            yAxisID: 'yDist',
+                            order: 1
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        title: { display: true, text: 'Performance Thermique (D+ cumulé, Plafond / Déco & Distance)' },
+                        tooltip: {
+                            callbacks: {
+                                afterBody: (items) => {
+                                    const m = perfMeta[items[0].dataIndex];
+                                    return `Site : ${m.site} | Durée : ${m.duration} (${m.glider})`;
+                                }
+                            }
+                        }
+                    },
                     scales: {
-                        y: {
-                            beginAtZero: true
+                        yGain: {
+                            position: 'left',
+                            beginAtZero: true,
+                            title: { display: true, text: 'Gain d\'altitude (m)' }
+                        },
+                        yDist: {
+                            position: 'right',
+                            beginAtZero: true,
+                            grid: { drawOnChartArea: false },
+                            title: { display: true, text: 'Distance trace (km)' }
                         }
                     }
                 }
-            }); // End of distance_chart
+            });
         }
 
         // update_table
@@ -473,8 +563,8 @@
         $('#flight_table').DataTable().on('search.dt', () => {
             // Update charts when search is performed
             var filteredData = [];
-            $('#flight_table').DataTable().rows({ search: 'applied' }).indexes().map(index => {
-                filteredData[index] = book_data[index];
+            $('#flight_table').DataTable().rows({ search: 'applied' }).indexes().each(index => {
+                filteredData.push(book_data[index]);
             });
             update_charts(filteredData);
             updateSelectAllCheckbox();
