@@ -137,61 +137,62 @@
                     datasets: [{
                         label: 'Ground handling (nbr)',
                         data: nbVols,
-                        backgroundColor: '#4caf50',
-                        yAxisID: 'y'
+                        backgroundColor: '#2196f3',
+                        yAxisID: 'y',
+                        order: 2
                     },
                     {
-                        label: 'Ground handling (h)',
+                        label: 'Temps de gonflage (h)',
                         data: tpsVols,
-                        backgroundColor: '#2196f3',
-                        yAxisID: 'y1'
+                        type: 'line',
+                        borderColor: '#4caf50',
+                        backgroundColor: '#4caf50',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        yAxisID: 'y1',
+                        order: 1
                     }]
                 },
                 options: {
                     responsive: true,
+                    interaction: { mode: 'index', intersect: false },
                     scales: {
+                        x: { stacked: true },
                         y: {
+                            stacked: true,
                             position: 'left',
-                            title: {
-                                display: true,
-                                text: 'Ground handling (nbr)'
-                            }
+                            title: { display: true, text: 'Nombre de gonflages' }
                         },
                         y1: {
                             position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Ground handling (h)'
-                            },
-                            grid: {
-                                drawOnChartArea: false
-                            }
+                            title: { display: true, text: 'Temps de gonflage (h)' },
+                            grid: { drawOnChartArea: false }
                         }
                     }
                 }
             }); // End of nb_flight_chart
 
             // Flight per site chart
-            let flight_per_siteName = Object.entries(flight_per_site).map(a => a[0]);
-            let flight_per_siteValues = Object.entries(flight_per_site).map(a => a[1]);
+            const sortedSites = Object.entries(flight_per_site)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
             new Chart(document.getElementById('nb_flight_per_site'), {
-                type: 'pie',
+                type: 'bar',
                 data: {
-                    labels: flight_per_siteName,
+                    labels: sortedSites.map(s => s[0]),
                     datasets: [{
                         label: 'Ground handling sites',
-                        data: flight_per_siteValues
+                        data: sortedSites.map(s => s[1]),
+                        backgroundColor: '#7e57c2'
                     }]
                 },
                 options: {
+                    indexAxis: 'y',
+                    responsive: true,
                     plugins: {
-                        legend: {
-                            display: false,
-                        },
-                        title: {
-                            display: true,
-                            text: 'Ground handling sites'
-                        }
+                        legend: { display: false },
+                        title: { display: true, text: 'Top 10 Sites de vol' }
                     }
                 }
             }); // End of nb_flight_per_site

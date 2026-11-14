@@ -7,8 +7,8 @@ class Tabs extends HTMLElement {
         const text_head = `
             <div class="tabs">
                 <a href="index.html" class="tab ${activeTab === 'flight' ? 'active' : ''}">🪂 Flight</a>
-                <a href="ground.html" class="tab ${activeTab === 'ground' ? 'active' : ''}">💨 Ground Handling</a>
-                <a href="flight.html" class="tab ${activeTab === 'track' ? 'active' : ''}">🗺️ Track Analyser</a>
+                <a href="ground.html" class="tab ${activeTab === 'ground' ? 'active' : ''}">💨 Ground</a>
+                <a href="flight.html" class="tab ${activeTab === 'track' ? 'active' : ''}">🗺️ Tracks</a>
                 <a href="stats.html" class="tab ${activeTab === 'stats' ? 'active' : ''}">📉 Stats</a>
                 <div class="right_button">
         `;
@@ -20,16 +20,16 @@ class Tabs extends HTMLElement {
 
         const flightTabBtn = `
                     <button>
-                        <label id="my-file-selector" for="file-selector">📎 Add track</label>
+                        <label id="my-file-selector" for="file-selector">📎 Add</label>
                         <input type="file" id="file-selector" accept=".igc, .gpx" placeholder="Select a file">
                     </button>
 
-                    <button id="view_selected_button">👁️ View flights</button>
+                    <button id="view_selected_button">👁️ View</button>
         `;
 
         const manualAndSaveButtons = `
-                    <button id="manual_entry_button" type="submit">➕ Manual entry</button>
-                    <button id="save_button_json">💾 Save to file</button>
+                    <button id="manual_entry_button" type="submit">➕ Entry</button>
+                    <button id="save_button_json">💾 Save</button>
         `;
 
         let rightButtons = text_head;
